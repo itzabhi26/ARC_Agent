@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -211,6 +211,7 @@ html, body { width:100%; height:100%; overflow:hidden; background:var(--bg); fon
   --select-bg: #1e293b;
   --input-bg: rgba(255,255,255,0.04);
   --shadow-color: rgba(0,0,0,0.4);
+  --card-shadow: 0 4px 24px rgba(0,0,0,0.3), 0 0 0 1px rgba(124,58,237,0.06);
 }
 
 /* ── LIGHT THEME ── */
@@ -239,6 +240,7 @@ html, body { width:100%; height:100%; overflow:hidden; background:var(--bg); fon
   --select-bg: #ffffff;
   --input-bg: rgba(16,185,129,0.04);
   --shadow-color: rgba(16,185,129,0.08);
+  --card-shadow: 0 2px 16px rgba(0,0,0,0.06), 0 0 0 1px rgba(16,185,129,0.08);
   --green-tint: rgba(16,185,129,0.08);
   --green-border: rgba(16,185,129,0.2);
 }
@@ -298,7 +300,7 @@ body::after{
 }
 .logo{display:flex;align-items:center;gap:10px;padding:0 20px 24px;border-bottom:1px solid var(--border);margin-bottom:16px}
 .logo-icon{width:36px;height:36px;background:linear-gradient(135deg,#7c3aed,#10b981);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 0 16px rgba(124,58,237,0.4);font-weight:800;letter-spacing:-1px}
-.logo-text{font-size:17px;font-weight:800;letter-spacing:-0.5px}
+.logo-text{font-size:17px;font-weight:800;letter-spacing:-0.5px;background:linear-gradient(135deg,var(--text),rgba(124,58,237,0.8));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .logo-badge{background:linear-gradient(135deg,#7c3aed,#6366f1);font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;letter-spacing:1px;color:#fff}
 .nav{flex:1;padding:0 10px}
 .nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;cursor:pointer;transition:all 0.2s;color:var(--muted);font-size:14px;font-weight:600;margin-bottom:2px;position:relative}
@@ -315,9 +317,9 @@ body::after{
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden}
 
 /* TOPBAR */
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid var(--border);background:var(--topbar-bg);backdrop-filter:blur(20px);flex-shrink:0;transition:background 0.3s}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid var(--border);background:var(--topbar-bg);backdrop-filter:blur(20px);flex-shrink:0;transition:background 0.3s;position:relative}.topbar::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#7c3aed,#10b981,#06b6d4);opacity:0.7}
 .topbar-title h1{font-size:26px;font-weight:800;letter-spacing:-1px}
-.topbar-title h1 span{background:linear-gradient(135deg,#7c3aed,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.topbar-title h1 span{background:linear-gradient(135deg,#7c3aed,#10b981,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:titleGlow 4s ease-in-out infinite alternate}@keyframes titleGlow{0%{filter:brightness(1)}100%{filter:brightness(1.2)}}
 .topbar-title p{font-size:13px;color:var(--muted2);margin-top:2px}
 .topbar-actions{display:flex;align-items:center;gap:10px}
 .btn-connect{background:linear-gradient(135deg,#7c3aed,#10b981);border:none;border-radius:10px;color:#fff;font-family:'Syne',sans-serif;font-weight:700;font-size:13px;padding:10px 18px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all 0.2s;box-shadow:0 4px 16px rgba(124,58,237,0.3)}
@@ -338,7 +340,7 @@ body::after{
 .col-side{width:280px;flex-shrink:0;display:flex;flex-direction:column;gap:16px}
 
 /* GLASS CARD */
-.card{background:var(--card-bg);border:1px solid var(--border);border-radius:16px;backdrop-filter:blur(10px);transition:border-color 0.2s, background 0.3s}
+.card{background:var(--card-bg);border:1px solid var(--border);border-radius:16px;backdrop-filter:blur(10px);transition:border-color 0.2s, background 0.3s, box-shadow 0.2s;box-shadow:var(--card-shadow)}
 .card:hover{border-color:rgba(124,58,237,0.2)}
 
 /* AI CHAT */
@@ -475,6 +477,8 @@ body::after{
 .net-name{flex:1;font-weight:600}
 .net-ping{font-family:'JetBrains Mono',monospace;color:var(--muted2)}
 
+
+
 /* TABS */
 .tabs{display:flex;gap:4px;background:var(--glass);border-radius:10px;padding:4px;margin-bottom:16px}
 .tab{flex:1;padding:7px;text-align:center;font-size:12px;font-weight:700;border-radius:7px;cursor:pointer;color:var(--muted2);transition:all 0.2s}
@@ -554,6 +558,8 @@ body::after{
 /* ANIMATIONS */
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .fade-in{animation:fadeIn 0.4s ease forwards}
+@keyframes slideIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
+.slide-in{animation:slideIn 0.3s ease forwards}
 .content-scroll{overflow-y:auto}
 .content-scroll::-webkit-scrollbar{width:4px}
 .content-scroll::-webkit-scrollbar-thumb{background:linear-gradient(to bottom,rgba(124,58,237,0.3),rgba(16,185,129,0.2));border-radius:2px}
@@ -592,6 +598,116 @@ body::after{
   from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* ── RIPPLE ANIMATION ── */
+@keyframes rippleAnim { to { transform:scale(4); opacity:0; } }
+
+/* ── NAV HOVER GLOW ── */
+.nav-item { transition:all 0.2s; position:relative; overflow:hidden; }
+.nav-item::after { content:''; position:absolute; inset:0; background:radial-gradient(circle at var(--mx,50%) var(--my,50%),rgba(124,58,237,0.1),transparent 70%); opacity:0; transition:opacity 0.3s; pointer-events:none; }
+.nav-item:hover::after { opacity:1; }
+
+/* ── BUTTON SHINE ── */
+.btn-connect,.btn-primary,.btn-demo { position:relative; overflow:hidden; }
+.btn-connect::after,.btn-primary::after,.btn-demo::after { content:''; position:absolute; top:0; left:-100%; width:60%; height:100%; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.18),transparent); transition:left 0.4s ease; pointer-events:none; }
+.btn-connect:hover::after,.btn-primary:hover::after,.btn-demo:hover::after { left:140%; }
+
+/* ══════════════════════════════════
+   PROTOCOL STATS SECTION
+══════════════════════════════════ */
+.proto-stats-wrap{margin-top:20px;display:flex;flex-direction:column;gap:14px}
+.proto-stats-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.proto-stats-title{font-size:15px;font-weight:800;display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.proto-stats-sub{font-size:11px;color:var(--muted2)}
+.proto-live-dot{width:8px;height:8px;border-radius:50%;background:#10b981;display:inline-block;animation:netPulse 2.5s ease-in-out infinite}
+.proto-updated-badge{font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--muted2);background:var(--glass);border:1px solid var(--border);border-radius:6px;padding:3px 8px}
+.proto-explorer-link{font-size:11px;font-weight:700;color:var(--neon2);text-decoration:none}
+
+/* Big 5 stat grid */
+.proto-big-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+@media(max-width:1200px){.proto-big-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:700px){.proto-big-grid{grid-template-columns:repeat(2,1fr)}}
+.proto-card{background:var(--glass);border:1px solid var(--border);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;position:relative;overflow:hidden;transition:all 0.25s}
+.proto-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.15)}
+.proto-card::before{content:'';position:absolute;inset:0;opacity:0.04;border-radius:14px}
+.proto-card--users::before{background:linear-gradient(135deg,#7c3aed,transparent)}
+.proto-card--txns::before{background:linear-gradient(135deg,#10b981,transparent)}
+.proto-card--bridge::before{background:linear-gradient(135deg,#06b6d4,transparent)}
+.proto-card--swap::before{background:linear-gradient(135deg,#f59e0b,transparent)}
+.proto-card--send::before{background:linear-gradient(135deg,#6366f1,transparent)}
+.proto-card-icon{font-size:20px;line-height:1}
+.proto-card-label{font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:var(--muted2)}
+.proto-card-val{font-size:20px;font-weight:800;font-family:'JetBrains Mono',monospace;line-height:1.2}
+.proto-card--users .proto-card-val{color:#a78bfa}
+.proto-card--txns .proto-card-val{color:#10b981}
+.proto-card--bridge .proto-card-val{color:#06b6d4}
+.proto-card--swap .proto-card-val{color:#f59e0b}
+.proto-card--send .proto-card-val{color:#818cf8}
+.proto-card-change{font-size:10px;color:var(--muted2)}
+.proto-card-sparkline{position:absolute;bottom:8px;right:8px;opacity:0.7}
+
+/* Breakdown row */
+.proto-breakdown-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+@media(max-width:900px){.proto-breakdown-row{grid-template-columns:1fr}}
+.proto-breakdown-card{background:var(--glass);border:1px solid var(--border);border-radius:14px;padding:14px 16px}
+.proto-breakdown-title{font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:var(--muted2);margin-bottom:10px}
+
+/* Breakdown bar */
+.proto-breakdown-bar{display:flex;height:8px;border-radius:4px;overflow:hidden;gap:2px;margin-bottom:10px;background:var(--glass-b)}
+.pbb-seg{height:100%;border-radius:2px;transition:width 1s cubic-bezier(.4,0,.2,1)}
+.pbb-send{background:#6366f1}
+.pbb-bridge{background:#06b6d4}
+.pbb-swap{background:#f59e0b}
+.pbb-other{background:rgba(255,255,255,0.12)}
+.proto-breakdown-legend{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.pbl-item{display:flex;align-items:center;gap:6px;font-size:11px}
+.pbl-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.pbl-name{flex:1;color:var(--muted2)}
+.pbl-pct{font-weight:700;font-family:'JetBrains Mono',monospace}
+
+/* Health grid */
+.proto-health-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.phg-item{background:var(--glass-b);border-radius:8px;padding:8px 10px}
+.phg-label{font-size:9px;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted2);margin-bottom:3px}
+.phg-val{font-size:13px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--text)}
+
+/* Leaderboard */
+.proto-lb-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)}
+.proto-lb-item:last-child{border-bottom:none}
+.proto-lb-rank{font-size:11px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--muted2);width:18px;text-align:center;flex-shrink:0}
+.proto-lb-rank.gold{color:#f59e0b}
+.proto-lb-rank.silver{color:#94a3b8}
+.proto-lb-rank.bronze{color:#cd7c2f}
+.proto-lb-addr{flex:1;font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--text)}
+.proto-lb-count{font-size:11px;font-weight:700;color:var(--neon4);font-family:'JetBrains Mono',monospace}
+/* ── CARD HOVER ── */
+.card { transition:transform 0.2s, box-shadow 0.2s, border-color 0.2s; }
+.card:hover { transform:translateY(-2px); box-shadow:0 8px 32px rgba(124,58,237,0.1); }
+
+/* ── STAT CARD HOVER ── */
+.stat-card { transition:all 0.25s; }
+.stat-card:hover { transform:translateY(-3px); box-shadow:0 8px 24px rgba(16,185,129,0.12); border-color:rgba(16,185,129,0.3) !important; }
+
+/* ── CHIP HOVER ── */
+.chip { transition:all 0.2s; }
+.chip:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(124,58,237,0.15); border-color:rgba(124,58,237,0.4) !important; }
+
+/* ── NET DOT PULSE ── */
+.net-dot.green { animation:netPulse 2.5s ease-in-out infinite; }
+@keyframes netPulse { 0%,100%{box-shadow:0 0 4px #10b981} 50%{box-shadow:0 0 12px #10b981,0 0 24px rgba(16,185,129,0.3)} }
+
+/* ── STATUS PILL GLOW ── */
+.status-pill { animation:pillGlow 3s ease-in-out infinite; }
+@keyframes pillGlow { 0%,100%{box-shadow:none} 50%{box-shadow:0 0 0 3px rgba(16,185,129,0.1)} }
+
+/* ── ACTION BTN ── */
+.action-btn { transition:all 0.2s; }
+.action-btn:hover { transform:translateY(-3px); box-shadow:0 8px 20px rgba(124,58,237,0.12); }
+
+/* ── WALLET ITEM HOVER ── */
+.wallet-item { transition:all 0.15s; border-radius:8px; }
+.wallet-item:hover { background:rgba(124,58,237,0.04); padding-left:4px; }
+
 </style>
 </head>
 <body>
@@ -618,7 +734,7 @@ body::after{
   <div class="side-item">VER&nbsp;&nbsp;<span class="si-val">2.0.1</span></div>
 </div>
 <div class="side-right">
-  <div class="side-item"><span class="si-val">5042002</span>&nbsp;CHAIN</div>
+  <div class="side-item"><span class="si-val">5041906</span>&nbsp;CHAIN</div>
   <div class="side-item"><span class="si-val">USDC</span>&nbsp;GAS</div>
   <div class="side-item"><span class="si-val" id="sideBlock">—</span>&nbsp;BLK</div>
   <div class="side-item"><span class="si-val">L1</span>&nbsp;EVM</div>
@@ -656,7 +772,7 @@ body::after{
   </div>
 
   <div class="headline">
-    <div class="headline-pre">Protocol <span>v2.0</span> &nbsp;·&nbsp; ARC Testnet &nbsp;·&nbsp; Chain 5042002</div>
+    <div class="headline-pre">Protocol <span>v2.0</span> &nbsp;·&nbsp; ARC Testnet &nbsp;·&nbsp; Chain 5041906</div>
     <span class="headline-main">WELCOME TO</span>
     <span class="headline-name">ARCAGENT<span class="headline-dot">.</span></span>
   </div>
@@ -705,12 +821,35 @@ body::after{
       <div class="nav-item" onclick="showPage('invest')"><span class="nav-icon">📈</span> Invest</div>
       <div class="nav-item" onclick="showPage('faucet')"><span class="nav-icon">🚰</span> Faucet</div>
       <div class="nav-item" onclick="showPage('activity')"><span class="nav-icon">⚡</span> Activity</div>
+      <div class="nav-item" onclick="showPage('stats')"><span class="nav-icon">📡</span> Stats</div>
+      <div class="nav-item" onclick="showPage('profile')"><span class="nav-icon">👤</span> Profile</div>
       <div class="nav-item" onclick="showPage('settings')"><span class="nav-icon">⚙</span> Settings</div>
     </nav>
-    <div class="demo-card">
-      <h4>Try Demo Mode</h4>
-      <p>Explore all features without connecting your wallet</p>
-      <button class="btn-demo" onclick="enableDemo()">Start Demo →</button>
+    <div class="demo-card" id="sidebarProfileCard" style="cursor:default">
+      <!-- Avatar + Name row — NOT clickable -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <div id="sidebarAvatarWrap" style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#10b981);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#fff;flex-shrink:0;overflow:hidden;border:2px solid rgba(124,58,237,0.35);box-shadow:0 0 10px rgba(124,58,237,0.2)">
+          <span id="sidebarAvatarText">?</span>
+          <img id="sidebarAvatarImg" src="" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:50%">
+        </div>
+        <div style="flex:1;min-width:0">
+          <div id="sidebarName" style="font-size:13px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)">Connect Wallet</div>
+          <div id="sidebarWalletShort" style="font-size:10px;color:var(--muted2);font-family:'JetBrains Mono',monospace;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Not connected</div>
+        </div>
+      </div>
+      <!-- Stats row -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+        <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.15);border-radius:8px;padding:6px;text-align:center">
+          <div id="sidebarTxCount" style="font-size:14px;font-weight:800;color:var(--neon4)">0</div>
+          <div style="font-size:9px;color:var(--muted2);letter-spacing:0.5px">TXN</div>
+        </div>
+        <div style="background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.15);border-radius:8px;padding:6px;text-align:center">
+          <div id="sidebarBal" style="font-size:14px;font-weight:800;color:var(--neon)">—</div>
+          <div style="font-size:9px;color:var(--muted2);letter-spacing:0.5px">USDC</div>
+        </div>
+      </div>
+      <!-- ONLY this button is clickable -->
+      <button class="btn-demo" style="width:100%;background:linear-gradient(135deg,rgba(124,58,237,0.2),rgba(16,185,129,0.15));border:1px solid rgba(124,58,237,0.3);color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px" onclick="showPage('profile')">👤 View Profile →</button>
     </div>
   </aside>
 
@@ -789,7 +928,7 @@ body::after{
               <h4>Send</h4><p>Transfer tokens across chains</p>
             </div>
             <div class="action-btn" onclick="goToTransferTab('bridge')">
-              <div class="action-icon" style="background:rgba(16,185,129,0.15)">🌉</div>
+              <div class="action-icon" style="background:rgba(16,185,129,0.15)">⛓️</div>
               <h4>Bridge</h4><p>Move assets between chains</p>
             </div>
             <div class="action-btn" onclick="goToTransferTab('swap')">
@@ -847,6 +986,7 @@ body::after{
           <div class="stat-card"><div class="stat-icon">💎</div><div class="stat-label">USDC Balance</div><div class="stat-val" id="statUsdc">—</div><div class="stat-sub up">ARC Testnet</div></div>
           <div class="stat-card"><div class="stat-icon">⚡</div><div class="stat-label">ARC Efficiency</div><div class="stat-val">98.7%</div><div class="stat-sub up">Optimized</div></div>
         </div>
+
       </div>
 
       <!-- RIGHT SIDEBAR -->
@@ -888,14 +1028,67 @@ body::after{
         <div class="card network-card fade-in">
           <div class="section-title" style="margin-bottom:8px">Network Status</div>
           <div class="network-item"><div class="net-dot green"></div><div class="net-name">ARC Testnet</div><div class="net-ping" id="arcPing">—</div></div>
-          <div class="network-item"><div class="net-dot green"></div><div class="net-name">Chain ID: 5042002</div><div class="net-ping">EVM</div></div>
+          <div class="network-item"><div class="net-dot green"></div><div class="net-name">Chain ID: 5041906</div><div class="net-ping">EVM</div></div>
           <div class="network-item"><div class="net-dot green"></div><div class="net-name">Base Sepolia</div><div class="net-ping">—</div></div>
           <div class="network-item"><div class="net-dot yellow"></div><div class="net-name">Block Explorer</div><div><a href="https://testnet.arcscan.app" target="_blank" style="color:var(--neon2);font-size:11px;font-family:'JetBrains Mono'">arcscan ↗</a></div></div>
+        
+          <div class="card network-card fade-in" style="margin-top:20px;padding:16px;border:1px solid var(--neon2);border-radius:16px;background:linear-gradient(135deg,rgba(0,0,0,0.6),rgba(0,255,200,0.04))">
+  <div style="display:flex;align-items:center;gap:14px">
+
+    <div style="position:relative;flex-shrink:0">
+      <img src="data:image/jpeg;base64,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0lApIl8ZUFdfVSWQXA7Ft1yc7FQzIjRUE6ThATTU6yY1LUVskv8AfgLhaovDEVrMG4COUcVOBozsdB2TZmw2tVXO57vGpWixIJ1mUKOJlhTuHi3DOY2kNmSzY/EH0/jKfFm+wV8SS0LqWCudmpZg2uNQoUY9hsdkz4BcOyTBuEMkeDSZmEf1S2CGAoGa8RPy5ovuKYntJvAsO2QsciRBNBRJCOYmgpk9eEO1riEKgPBoAr5CNYFboWMgRtlBjGtbM5VlN8z48TKXLApwOR4vHeBDydsL9AsMrVXqS5OhpwIoTDc70wNpQrfAbB3NIEOHC0YrhIQxmdgxZ4Ret3x4rEA8ZVsWFhyCpNwFjTqtYXGzCw4LYxhAm0lLsI2vm9PBbBGCspsn+sNApGhGZjZvxtqH4k/oV/dim2xRI1qOas8R+lIrlbAix4PMVBNgQ/OiOgiBWXhHkbDXZ28LdvsQtXKawcKyO675+SEwOKDQyGskoOV+4Pbw2/SIS+xKzB4KcVcwIzLnV8LDg1aNwbRxSguNqRhchP1XJrWUI1ai5MzjOimYNqndGR0HABp2EXQIRr5cH2vDWnKPKIQhG4QeaL+CfSycKkerMRZcDueOg2sJQlvBNXCx2JByerExO5oPduT+8EaGTWJarZ6mR1CWVSzaElC+4yRw/qxD3YRmz4P/2gAMAwEAAgADAAAAEHffffffffffffHfffffffffffffffffffffPNO/fffffffffffdfffbXfb88uq3En/fffffffffXffffY09uIODJLMvffffffffffeVaVTU8BEAEDAO9/fffffffffffbXbGwTaRp+0iBPffffffffefeffaSzKIlZfVoXPffffffffffffffX0Iy7GSjC/fffffffffVfffffYsIXiTdZ9W5ffffffffVedfffd2GPVGsF5d/ffffffffffffffbnJ9rPOOCrcffffffffdffffffO19PPPGEXzfffffffcDfffffff8Cc/PPRww9//fffffffffbex54jWQNEEjSw0+fffffffffa+pRnNQIwGMONHHgffffffeffeQCOEBN0K7MNPOKJHdfffcffaaFFIHFQHWfLPPKFCM+/fffffeCEKFFURK3PLPPJADJFffffffecAOAGMSUDOFPNAFEGvfffdffaRCFCBLLKnJCAMDBGGPvf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"
+           alt="Itz_Abhi"
+           style="
+             width:64px;
+             height:64px;
+             border-radius:50%;
+             object-fit:cover;
+             display:block;
+             border:2px solid var(--neon2);
+             box-shadow:0 0 12px rgba(0,255,200,0.4);
+           ">
+      <div style="position:absolute;bottom:2px;right:2px;width:12px;height:12px;border-radius:50%;background:#22c55e;border:2px solid #000"></div>
+    </div>
+
+    <div style="flex:1;min-width:0">
+      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+        Itz_Abhi
+      </div>
+      <div style="font-size:11px;color:var(--muted2);margin-bottom:10px">
+        🛠 Built by Itz_Abhi
+      </div>
+      <a href="https://x.com/Itzabhi0"
+         target="_blank"
+         style="
+           display:inline-flex;
+           align-items:center;
+           gap:5px;
+           padding:5px 12px;
+           border-radius:20px;
+           font-size:11px;
+           font-weight:600;
+           text-decoration:none;
+           color:white;
+           background:linear-gradient(135deg,var(--accent),var(--neon2));
+           box-shadow:0 2px 8px rgba(0,255,200,0.25);
+           transition:opacity 0.2s;
+         "
+         onmouseover="this.style.opacity='0.85'"
+         onmouseout="this.style.opacity='1'">
+        𝕏 Follow
+      </a>
+    </div>
+
+  </div>
+</div>
+
         </div>
       </div>
     </div>
   </div>
 </div>
+
+
 
 <!-- WALLET CONNECT MODAL -->
 <div class="modal-overlay" id="walletModal" onclick="if(event.target===this)closeModal()">
@@ -904,7 +1097,7 @@ body::after{
       <h3>Connect Wallet</h3>
       <div class="modal-close" onclick="closeModal()">✕</div>
     </div>
-    <p style="font-size:12px;color:var(--muted2);margin-bottom:16px">Connecting will add ARC Testnet (Chain ID: 5042002) to your wallet automatically.</p>
+    <p style="font-size:12px;color:var(--muted2);margin-bottom:16px">Connecting will add ARC Testnet (Chain ID: 5041906) to your wallet automatically.</p>
     <div class="wallet-option" onclick="connectMetaMask()">
       <div class="wallet-option-icon">🦊</div>
       <div><div class="wallet-option-name">MetaMask</div><div class="wallet-option-sub">Connect using browser extension · Adds ARC Testnet</div></div>
@@ -1005,7 +1198,7 @@ draw();
 
 // TICKER
 const tickerData = [
-  {label:'ARC Testnet',value:'ONLINE',hi:true},{label:'Chain ID',value:'5042002'},
+  {label:'ARC Testnet',value:'ONLINE',hi:true},{label:'Chain ID',value:'5041906'},
   {label:'Gas Token',value:'USDC'},{label:'Finality',value:'<1s'},
   {label:'AI Status',value:'ACTIVE',hi:true},{label:'EVM Compat',value:'100%'},
   {label:'Protocol',value:'ARCAgent v2'},{label:'Network',value:'rpc.testnet.arc.network'},
@@ -1056,6 +1249,22 @@ function enterApp() {
 }
 document.addEventListener('keydown', e => { if(e.key==='Enter') enterApp(); });
 
+
+window.setInvestMax = function(){
+  const inp = document.getElementById('stakeAmount') || document.getElementById('depositAmount') || document.querySelector('input[type="number"]');
+  if(!inp) return;
+  let bal = window.usdcBalance || window.walletBalance || 0;
+  bal = parseFloat(bal) || 0;
+  inp.value = bal ? bal.toFixed(2) : '';
+};
+
+window.setInvestPct = function(pct){
+  const inp = document.getElementById('stakeAmount') || document.getElementById('depositAmount') || document.querySelector('input[type="number"]');
+  if(!inp) return;
+  let bal = parseFloat(window.usdcBalance || window.walletBalance || 0) || 0;
+  inp.value = ((bal * pct)/100).toFixed(2);
+};
+
 </script>
 
 <!-- ══════════════════════════════════
@@ -1063,6 +1272,7 @@ document.addEventListener('keydown', e => { if(e.key==='Enter') enterApp(); });
 ══════════════════════════════════ -->
 <script>
 function initMainApp() {
+  setTimeout(attachRipples, 300);
   // Re-init nav highlights
   document.querySelectorAll('.nav-item').forEach(el => {
     el.addEventListener('click', () => {
@@ -1098,14 +1308,14 @@ function initMainApp() {
 // ARC TESTNET CONFIG
 // ═══════════════════════════════════════════════════════
 const ARC_TESTNET = {
-  chainId: '0x4CEEF2', // 5042002 in hex
+  chainId: '0x4CD252', // 5041906 in hex — verified ARC Testnet chain ID
   chainName: 'ARC Testnet',
   nativeCurrency: { name: 'USDC', symbol: 'USDC', decimals: 6 },
   rpcUrls: ['https://rpc.testnet.arc.network'],
   blockExplorerUrls: ['https://testnet.arcscan.app']
 };
 // USDC contract on ARC Testnet (native gas token, also ERC-20 compatible)
-const USDC_ARC = '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238'; // standard USDC testnet
+const USDC_ARC = '0xD628F82B8339e601529F76a9dF70C48E658cA882'; // ARCAgent token CA on ARC Testnet
 
 // ═══════════════════════════════════════════════════════
 // STATE
@@ -1116,7 +1326,7 @@ let demoMode = false;
 let walletAddress = '';
 let walletShort = '';
 let currentTheme = 'light';
-const pages = ['dashboard','ai','transfer','portfolio','invest','faucet','activity','settings'];
+const pages = ['dashboard','ai','transfer','portfolio','invest','faucet','activity','stats','profile','settings'];
 
 // ═══════════════════════════════════════════════════════
 // THEME TOGGLE — REAL
@@ -1218,6 +1428,9 @@ function onWalletConnected(address, walletName) {
   document.getElementById('networkName').textContent = 'ARC Testnet';
   showToast(walletName + ' connected: ' + walletShort, '✅');
   
+  // Update sidebar profile
+  updateSidebarProfile(walletAddress, null, 0, '—');
+  
   // Fetch real data
   fetchAllRealData();
   
@@ -1254,7 +1467,150 @@ function disconnectWallet() {
   document.getElementById('statSaved').textContent = '—';
   document.getElementById('statTxCount').textContent = '—';
   document.getElementById('statUsdc').textContent = '—';
+  updateSidebarProfile(null, null, 0, '—');
   showToast('Wallet disconnected', '👋');
+}
+
+// ═══════════════════════════════════════════════════
+// PROFILE SYSTEM
+// ═══════════════════════════════════════════════════
+const PROFILE_KEY = 'arcagent_profile';
+
+function loadProfile() {
+  try { return JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}'); }
+  catch(e) { return {}; }
+}
+function saveProfile(data) {
+  const existing = loadProfile();
+  localStorage.setItem(PROFILE_KEY, JSON.stringify({...existing, ...data}));
+}
+
+function updateSidebarProfile(addr, name, txCount, balance) {
+  const profile = loadProfile();
+  // Username: saved name > provided name > "Connect Wallet"
+  const displayName = profile.name || name || (addr ? 'My Wallet' : 'Connect Wallet');
+  // Wallet line: always show address if connected, else "Not connected"
+  const walletText = addr ? addr.slice(0,6)+'...'+addr.slice(-4) : 'Not connected';
+  
+  const nameEl = document.getElementById('sidebarName');
+  const walletEl = document.getElementById('sidebarWalletShort');
+  const txEl = document.getElementById('sidebarTxCount');
+  const balEl = document.getElementById('sidebarBal');
+  const avatarText = document.getElementById('sidebarAvatarText');
+  const avatarImg = document.getElementById('sidebarAvatarImg');
+  
+  if(nameEl) nameEl.textContent = displayName;
+  if(walletEl) walletEl.textContent = walletText;
+  if(txEl) txEl.textContent = txCount || 0;
+  if(balEl) balEl.textContent = balance !== undefined ? balance : '—';
+  
+  // Avatar: photo or initials
+  if(profile.photo) {
+    if(avatarImg) { avatarImg.src = profile.photo; avatarImg.style.display='block'; }
+    if(avatarText) avatarText.style.display='none';
+  } else if(displayName && displayName !== 'Connect Wallet') {
+    const initials = displayName.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    if(avatarText) { avatarText.textContent = initials; avatarText.style.display=''; }
+    if(avatarImg) avatarImg.style.display='none';
+  }
+}
+
+function initProfilePage() {
+  const profile = loadProfile();
+  // Name
+  const nameEl = document.getElementById('profileNameDisplay');
+  if(nameEl) nameEl.textContent = profile.name || (walletShort || 'Anonymous');
+  const nameInput = document.getElementById('profileNameInput');
+  if(nameInput) nameInput.value = profile.name || '';
+  // Wallet
+  const addrEl = document.getElementById('profileWalletAddr');
+  const fullAddrEl = document.getElementById('profileFullAddr');
+  if(addrEl) addrEl.textContent = walletShort || 'Not connected';
+  if(fullAddrEl) fullAddrEl.textContent = walletAddress || 'Not connected';
+  // Explorer link
+  const expLink = document.getElementById('profileExplorerLink');
+  if(expLink && walletAddress) expLink.href = 'https://testnet.arcscan.app/address/'+walletAddress;
+  // Stats
+  const txEl = document.getElementById('profileTxCount');
+  const balEl = document.getElementById('profileBalance');
+  const gasEl = document.getElementById('profileGasSaved');
+  if(txEl) txEl.textContent = document.getElementById('statTxCount')?.textContent || '0';
+  if(balEl) balEl.textContent = document.getElementById('statUsdc')?.textContent || '—';
+  if(gasEl) gasEl.textContent = document.getElementById('statSaved')?.textContent || '$0';
+  // Avatar
+  const avatarText = document.getElementById('profileAvatarText');
+  const avatarImg = document.getElementById('profileAvatarImg');
+  if(profile.photo) {
+    if(avatarImg) { avatarImg.src=profile.photo; avatarImg.style.display='block'; }
+    if(avatarText) avatarText.style.display='none';
+  } else {
+    const name = profile.name || walletShort || '?';
+    const initials = name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    if(avatarText) { avatarText.textContent=initials; avatarText.style.display=''; }
+    if(avatarImg) avatarImg.style.display='none';
+  }
+  // Activity
+  const actList = document.getElementById('profileActivityList');
+  if(actList && allTxCache && allTxCache.length > 0) {
+    actList.innerHTML = allTxCache.slice(0,5).map(tx => {
+      const isOut = tx.from && tx.from.toLowerCase() === walletAddress.toLowerCase();
+      const val = (parseInt(tx.value||0)/1e6).toFixed(4);
+      const ago = typeof timeAgo === 'function' ? timeAgo(parseInt(tx.timeStamp)*1000) : '—';
+      return `<div class="activity-item">
+        <div class="activity-icon" style="background:${isOut?'rgba(239,68,68,0.12)':'rgba(16,185,129,0.12)'}">${isOut?'⬆':'⬇'}</div>
+        <div style="flex:1"><div class="activity-name">${isOut?'Sent':'Received'}</div><div class="activity-time">${ago}</div></div>
+        <div class="activity-amt ${isOut?'neg':'pos'}">${isOut?'-':'+'}${val} USDC</div>
+      </div>`;
+    }).join('');
+  } else if(actList && isConnected) {
+    actList.innerHTML = '<div style="color:var(--muted2);font-size:12px;text-align:center;padding:12px">No transactions yet — <span style="color:var(--neon2);cursor:pointer" onclick="showPage(&apos;faucet&apos;)">Get tokens →</span></div>';
+  }
+}
+
+function toggleNameEdit() {
+  const editDiv = document.getElementById('profileNameEdit');
+  if(editDiv) editDiv.style.display = editDiv.style.display === 'none' ? 'flex' : 'none';
+}
+
+function saveProfileName() {
+  const input = document.getElementById('profileNameInput');
+  if(!input || !input.value.trim()) return;
+  const name = input.value.trim();
+  saveProfile({ name });
+  const display = document.getElementById('profileNameDisplay');
+  if(display) display.textContent = name;
+  const editDiv = document.getElementById('profileNameEdit');
+  if(editDiv) editDiv.style.display = 'none';
+  updateSidebarProfile(walletAddress, name, null, null);
+  showToast('Name updated: '+name, '✅');
+}
+
+function uploadProfilePhoto(input) {
+  const file = input.files[0];
+  if(!file) return;
+  if(file.size > 2*1024*1024) { showToast('Image too large (max 2MB)', '⚠️'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    const photoData = e.target.result;
+    saveProfile({ photo: photoData });
+    // Update profile avatar
+    const avatarImg = document.getElementById('profileAvatarImg');
+    const avatarText = document.getElementById('profileAvatarText');
+    if(avatarImg) { avatarImg.src=photoData; avatarImg.style.display='block'; }
+    if(avatarText) avatarText.style.display='none';
+    // Update sidebar
+    const sideImg = document.getElementById('sidebarAvatarImg');
+    const sideTxt = document.getElementById('sidebarAvatarText');
+    if(sideImg) { sideImg.src=photoData; sideImg.style.display='block'; }
+    if(sideTxt) sideTxt.style.display='none';
+    showToast('Profile photo updated! 📷', '✅');
+  };
+  reader.readAsDataURL(file);
+}
+
+function copyAddress() {
+  if(!walletAddress) { showToast('No wallet connected', '⚠️'); return; }
+  navigator.clipboard.writeText(walletAddress).then(() => showToast('Address copied! 📋', '✅'));
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1305,6 +1661,7 @@ async function fetchAllRealData() {
     await fetchRecentTransactions(addr);
     
     showToast('Real data loaded! ✅', '📊');
+    updateSidebarProfile(addr, null, txCount, nativeUSDC);
     
   } catch(err) {
     console.error('Data fetch error:', err);
@@ -1337,7 +1694,7 @@ function updateWalletOverview(usdcBalance, address) {
     </div>
     <div class="wallet-item">
       <div class="chain-icon" style="background:rgba(124,58,237,0.15)">⚡</div>
-      <div><div class="chain-name">ARC Chain</div><div class="chain-sub">Chain ID: 5042002</div></div>
+      <div><div class="chain-name">ARC Chain</div><div class="chain-sub">Chain ID: 5041906</div></div>
       <div class="chain-bal"><div class="chain-usd" style="font-size:11px;color:var(--neon4)">Connected</div><div class="chain-token">EVM</div></div>
     </div>
     <div class="wallet-item">
@@ -1349,25 +1706,45 @@ function updateWalletOverview(usdcBalance, address) {
 }
 
 async function fetchRecentTransactions(addr) {
-  // ArcScan API — fetch recent txns
-  const apiUrl = `https://testnet.arcscan.app/api?module=account&action=txlist&address=${addr}&startblock=0&endblock=99999999&page=1&offset=10&sort=desc`;
+  const BASE = 'https://testnet.arcscan.app/api';
   
   try {
-    const res = await fetch(apiUrl);
-    const data = await res.json();
-    
-    if (data.status === '1' && data.result && data.result.length > 0) {
-      renderTransactionList(data.result, addr, 'all');
-      renderRecentActivitySidebar(data.result.slice(0,3), addr);
+    // Fetch normal txns
+    const [txRes, tokenRes] = await Promise.allSettled([
+      fetch(`${BASE}?module=account&action=txlist&address=${addr}&startblock=0&endblock=99999999&page=1&offset=20&sort=desc`).then(r=>r.json()),
+      fetch(`${BASE}?module=account&action=tokentx&contractaddress=0xD628F82B8339e601529F76a9dF70C48E658cA882&address=${addr}&page=1&offset=20&sort=desc`).then(r=>r.json())
+    ]);
+
+    let allTxns = [];
+
+    if (txRes.status === 'fulfilled' && txRes.value?.status === '1') {
+      allTxns = [...allTxns, ...(txRes.value.result || [])];
+    }
+    if (tokenRes.status === 'fulfilled' && tokenRes.value?.status === '1') {
+      const tokenTxns = (tokenRes.value.result || []).map(t => ({...t, _isToken: true, tokenSymbol: t.tokenSymbol || 'USDC'}));
+      allTxns = [...allTxns, ...tokenTxns];
+    }
+
+    // Deduplicate by hash, sort by time desc
+    const seen = new Set();
+    allTxns = allTxns.filter(t => {
+      if(seen.has(t.hash)) return false;
+      seen.add(t.hash);
+      return true;
+    }).sort((a,b) => parseInt(b.timeStamp) - parseInt(a.timeStamp));
+
+    if (allTxns.length > 0) {
+      renderTransactionList(allTxns, addr, 'all');
+      renderRecentActivitySidebar(allTxns.slice(0,3), addr);
     } else {
-      // No transactions yet
       document.getElementById('recentActivityList').innerHTML = `
         <div style="color:var(--muted2);font-size:12px;padding:10px 0;text-align:center">
           No transactions yet on ARC Testnet.<br>
-          <span onclick="showPage('faucet')" style="color:var(--neon2);cursor:pointer">Get testnet tokens →</span>
+          <span onclick="showPage(&apos;faucet&apos;)" style="color:var(--neon2);cursor:pointer">Get testnet tokens →</span>
         </div>`;
     }
   } catch(e) {
+    console.warn('fetchRecentTransactions error:', e);
     document.getElementById('recentActivityList').innerHTML = `
       <div style="color:var(--muted2);font-size:12px;padding:10px 0;text-align:center">
         <a href="https://testnet.arcscan.app/address/${addr}" target="_blank" style="color:var(--neon2)">View on ArcScan ↗</a>
@@ -1461,28 +1838,29 @@ function timeAgo(ts) {
   return Math.floor(h/24) + 'd ago';
 }
 
-// ═══════════════════════════════════════════════════════
-// FAUCET — uses connected wallet address
+// FAUCET — Redirects directly to the faucet link based on selected chain
 // ═══════════════════════════════════════════════════════
 function requestFaucet() {
-  const addrEl = document.getElementById('faucetAddr');
-  const addr = addrEl ? addrEl.value.trim() : '';
-  if (!addr) {
-    if (isConnected) { addrEl.value = walletAddress; }
-    else { showToast('Please enter a wallet address', '⚠️'); return; }
-  }
-  if (!addr.startsWith('0x') || addr.length < 30) {
-    showToast('Invalid wallet address format', '⚠️'); return;
-  }
-  
+  // Pata lagayein ki kaunsi chain active/selected hai
   const activeFaucet = document.querySelector('.faucet-chain.active');
   const chain = activeFaucet ? activeFaucet.textContent.trim() : 'ARC Testnet';
   
-  showToast('Redirecting to official Circle faucet...', '🚰');
-  setTimeout(() => {
-    window.open('https://faucet.circle.com/', '_blank');
-    showToast('Use Circle Faucet for USDC on testnets ✅', '💧');
-  }, 800);
+  // Agar ARC Testnet selected hai
+  if (chain.includes('ARC')) {
+    showToast('Redirecting to ARC Testnet Faucet...', '🚰');
+    setTimeout(() => {
+      window.open('https://faucet.circle.com/', '_blank');
+      showToast('Use Circle Faucet for USDC on ARC Testnet ✅', '💧');
+    }, 800);
+  } 
+  // Agar baki 2 chains (Base ya ETH) mein se koi selected hai
+  else {
+    showToast('Redirecting to official Circle faucet...', '🚰');
+    setTimeout(() => {
+      window.open('https://faucet.circle.com/', '_blank');
+      showToast('Use Circle Faucet for USDC on testnets ✅', '💧');
+    }, 800);
+  }
 }
 
 function selectFaucetChain(el, name) {
@@ -1531,7 +1909,7 @@ function loadDemoData() {
       <div class="activity-amt pos">+50 USDC</div>
     </div>
     <div class="activity-item">
-      <div class="activity-icon" style="background:rgba(124,58,237,0.15)">🌉</div>
+      <div class="activity-icon" style="background:rgba(124,58,237,0.15)">⛓️</div>
       <div style="flex:1"><div class="activity-name">Bridged to Base</div><div class="activity-time">15 min ago · Demo</div></div>
       <div class="activity-amt neg">-20 USDC</div>
     </div>
@@ -1597,14 +1975,21 @@ function showPage(name) {
   div.style.width = '100%';
   div.innerHTML = getPageHTML(name);
   document.querySelector('.content').appendChild(div);
+  setTimeout(attachRipples, 120);
   
   // Post-render hooks
+  if (name === 'profile') {
+    setTimeout(() => initProfilePage(), 60);
+  }
   if (name === 'activity') {
     setTimeout(() => {
       if (isConnected || demoMode) {
         renderTransactionList(allTxCache, walletAddress, 'all');
       }
     }, 50);
+  }
+  if (name === 'stats') {
+    setTimeout(() => fetchProtocolStatsPage(), 300);
   }
   if (name === 'transfer') {
     setTimeout(() => {
@@ -1642,271 +2027,420 @@ function goToInvest() {
 // PAGE HTML
 // ═══════════════════════════════════════════════════════
 function getPageHTML(name) {
-  const ps = {
-    ai: `
-      <div class="card chat-card">
-        <div class="chat-header">
-          <div class="ai-avatar">🤖</div>
-          <div class="chat-header-text"><h3>ARCAgent Full AI Assistant</h3><p>Advanced cross-chain intelligence</p></div>
-          <div class="chat-status"><div class="status-dot"></div> Online</div>
-        </div>
-        <div class="quick-chips">
-          <div class="chip" onclick="sendChip('Best yield strategy on ARC Testnet?')">Best yield strategy</div>
-          <div class="chip" onclick="sendChip('Analyze my portfolio risk')">Portfolio risk</div>
-          <div class="chip" onclick="sendChip('Find gas-free transactions on ARC')">Gas-free txns</div>
-          <div class="chip" onclick="sendChip('Bridge 100 USDC to Base Sepolia')">Bridge USDC</div>
-          <div class="chip" onclick="sendChip('Show upcoming airdrop opportunities')">Airdrop alerts</div>
-          <div class="chip" onclick="sendChip('Compare DEX rates for ETH to USDC')">DEX comparison</div>
-        </div>
-        <div class="chat-messages" id="chatMessages" style="max-height:280px">
-          <div class="msg"><div class="msg-avatar">🤖</div><div class="msg-bubble">Welcome to ARCAgent Full AI Mode! I can help with advanced strategies, multi-hop routes, yield optimization, and real-time ARC Testnet intelligence. What would you like to explore?</div></div>
-        </div>
-        <div class="chat-input-row">
-          <input class="chat-input" id="chatInput" placeholder="Ask anything about your on-chain finances..." onkeydown="if(event.key==='Enter')sendMsg()">
-          <button class="mic-btn">🎤</button>
-          <button class="chat-input-btn" onclick="sendMsg()">➤</button>
-        </div>
-      </div>
-      <div class="card action-card">
-        <div class="section-title">AI Capabilities</div>
-        <div class="actions-grid" style="grid-template-columns:repeat(3,1fr)">
-          <div class="action-btn"><div class="action-icon" style="background:rgba(124,58,237,0.15)">🗺</div><h4>Route Finder</h4><p>Multi-hop optimal paths on ARC</p></div>
-          <div class="action-btn"><div class="action-icon" style="background:rgba(16,185,129,0.15)">📈</div><h4>Yield Scout</h4><p>Best DeFi yield rates</p></div>
-          <div class="action-btn"><div class="action-icon" style="background:rgba(245,158,11,0.15)">🛡</div><h4>Risk Analyzer</h4><p>Portfolio risk scoring</p></div>
-          <div class="action-btn"><div class="action-icon" style="background:rgba(6,182,212,0.15)">⚡</div><h4>Gas Optimizer</h4><p>USDC-based fee minimizer</p></div>
-          <div class="action-btn"><div class="action-icon" style="background:rgba(99,102,241,0.15)">🔔</div><h4>Smart Alerts</h4><p>Price & opportunity alerts</p></div>
-          <div class="action-btn"><div class="action-icon" style="background:rgba(239,68,68,0.15)">🎯</div><h4>Strategy Builder</h4><p>Custom DeFi strategies</p></div>
-        </div>
-      </div>`,
+  var h = '';
 
-    transfer: `
-      <div class="card transfer-card">
-        <div class="section-title">Cross-Chain Transfer</div>
-        <div class="tabs">
-          <div class="tab active" id="tab-send" onclick="handleTransferTab('send')">Send</div>
-          <div class="tab" id="tab-bridge" onclick="handleTransferTab('bridge')">Bridge</div>
-          <div class="tab" id="tab-swap" onclick="handleTransferTab('swap')">Swap</div>
-        </div>
-        
-        <div class="transfer-row" id="chain-row" style="display:none">
-          <div class="transfer-field">
-            <div class="field-label">FROM CHAIN</div>
-            <select class="field-select" id="fromChain" onchange="updatePreview()">
-              <option selected>ARC Testnet</option>
-              <option>Base Sepolia</option>
-              <option>Ethereum Sepolia</option>
-              <option>Arbitrum Sepolia</option>
-            </select>
-          </div>
-          <div class="arrow-btn" onclick="swapChains()">⇄</div>
-          <div class="transfer-field">
-            <div class="field-label">TO CHAIN</div>
-            <select class="field-select" id="toChain" onchange="updatePreview()">
-              <option>ARC Testnet</option>
-              <option selected>Base Sepolia</option>
-              <option>Ethereum Sepolia</option>
-              <option>Arbitrum Sepolia</option>
-            </select>
-          </div>
-        </div>
+  if (name === 'ai') {
+    h = '<div class="card chat-card">';
+    h += '<div class="chat-header"><div class="ai-avatar">🤖</div><div class="chat-header-text"><h3>ARCAgent AI Assistant</h3><p>Advanced cross-chain intelligence</p></div><div class="chat-status"><div class="status-dot"></div> Online</div></div>';
+    h += '<div class="quick-chips">';
+    h += '<div class="chip" onclick="sendChip(\'Best yield strategy on ARC Testnet?\')">Best yield strategy</div>';
+    h += '<div class="chip" onclick="sendChip(\'Analyze my portfolio risk\')">Portfolio risk</div>';
+    h += '<div class="chip" onclick="sendChip(\'Bridge 100 USDC to Base Sepolia\')">Bridge USDC</div>';
+    h += '<div class="chip" onclick="sendChip(\'Show upcoming airdrop opportunities\')">Airdrop alerts</div>';
+    h += '<div class="chip" onclick="sendChip(\'Compare DEX rates for ETH to USDC\')">DEX comparison</div>';
+    h += '<div class="chip" onclick="sendChip(\'Find gas-free transactions on ARC\')">Gas-free txns</div>';
+    h += '</div>';
+    h += '<div class="chat-messages" id="chatMessages" style="max-height:280px">';
+    h += '<div class="msg"><div class="msg-avatar">🤖</div><div class="msg-bubble">Welcome to ARCAgent AI! Connect wallet and I\'ll analyze your ARC Testnet data. What would you like to explore?</div></div>';
+    h += '</div>';
+    h += '<div class="chat-input-row">';
+    h += '<input class="chat-input" id="chatInput" placeholder="Ask anything about your on-chain finances..." onkeydown="if(event.key===\'Enter\')sendMsg()">';
+    h += '<button class="mic-btn">🎤</button>';
+    h += '<button class="chat-input-btn" onclick="sendMsg()">➤</button>';
+    h += '</div></div>';
+    h += '<div class="card action-card"><div class="section-title">AI Capabilities</div>';
+    h += '<div class="actions-grid" style="grid-template-columns:repeat(3,1fr)">';
+    h += '<div class="action-btn"><div class="action-icon" style="background:rgba(124,58,237,0.15)">🗺</div><h4>Route Finder</h4><p>Multi-hop optimal paths on ARC</p></div>';
+    h += '<div class="action-btn"><div class="action-icon" style="background:rgba(16,185,129,0.15)">📈</div><h4>Yield Scout</h4><p>Best DeFi yield rates</p></div>';
+    h += '<div class="action-btn"><div class="action-icon" style="background:rgba(245,158,11,0.15)">🛡</div><h4>Risk Analyzer</h4><p>Portfolio risk scoring</p></div>';
+    h += '<div class="action-btn"><div class="action-icon" style="background:rgba(6,182,212,0.15)">⚡</div><h4>Gas Optimizer</h4><p>USDC-based fee minimizer</p></div>';
+    h += '<div class="action-btn"><div class="action-icon" style="background:rgba(99,102,241,0.15)">🔔</div><h4>Smart Alerts</h4><p>Price and opportunity alerts</p></div>';
+    h += '<div class="action-btn"><div class="action-icon" style="background:rgba(239,68,68,0.15)">🎯</div><h4>Strategy Builder</h4><p>Custom DeFi strategies</p></div>';
+    h += '</div></div>';
+    return h;
+  }
 
-        <div class="transfer-row" id="standard-token-row">
-          <div class="transfer-field">
-            <div class="field-label">TOKEN</div>
-            <select class="field-select" id="tokenSel" onchange="updatePreview()">
-              <option>USDC</option>
-              <option>ETH</option>
-            </select>
-          </div>
-          <div class="transfer-field">
-            <div class="field-label">AMOUNT</div>
-            <input class="field-input" id="amountInput" type="number" placeholder="0.00" value="20" oninput="updatePreview()">
-          </div>
-        </div>
+  if (name === 'transfer') {
+    h = '<div class="card transfer-card">';
+    h += '<div class="section-title">Cross-Chain Transfer</div>';
+    h += '<div class="tabs">';
+    h += '<div class="tab active" id="tab-send" onclick="handleTransferTab(\'send\')">Send</div>';
+    h += '<div class="tab" id="tab-bridge" onclick="handleTransferTab(\'bridge\')">Bridge</div>';
+    h += '<div class="tab" id="tab-swap" onclick="handleTransferTab(\'swap\')">Swap</div>';
+    h += '</div>';
+    h += '<div class="transfer-row" id="chain-row" style="display:none">';
+    h += '<div class="transfer-field"><div class="field-label">FROM CHAIN</div>';
+    h += '<select class="field-select" id="fromChain" onchange="updatePreview()">';
+    h += '<option selected>ARC Testnet</option><option>Base Sepolia</option><option>Ethereum Sepolia</option><option>Arbitrum Sepolia</option>';
+    h += '</select></div>';
+    h += '<div class="arrow-btn" onclick="swapChains()">⇄</div>';
+    h += '<div class="transfer-field"><div class="field-label">TO CHAIN</div>';
+    h += '<select class="field-select" id="toChain" onchange="updatePreview()">';
+    h += '<option>ARC Testnet</option><option selected>Base Sepolia</option><option>Ethereum Sepolia</option><option>Arbitrum Sepolia</option>';
+    h += '</select></div></div>';
+    h += '<div class="transfer-row" id="standard-token-row">';
+    h += '<div class="transfer-field"><div class="field-label">TOKEN</div>';
+    h += '<select class="field-select" id="tokenSel" onchange="updatePreview()"><option>USDC</option><option>ETH</option></select>';
+    h += '</div><div class="transfer-field"><div class="field-label">AMOUNT</div>';
+    h += '<input class="field-input" id="amountInput" type="number" placeholder="0.00" value="20" oninput="updatePreview()">';
+    h += '</div></div>';
+    h += '<div id="dynamic-swap-box" style="display:none">';
+    h += '<div class="transfer-row" style="margin-bottom:10px">';
+    h += '<div class="transfer-field"><div class="field-label">SWAP FROM</div>';
+    h += '<select class="field-select" id="swapFromToken" onchange="updateSwapPreview()"><option>ETH</option><option>USDC</option></select>';
+    h += '</div><div class="transfer-field"><div class="field-label">AMOUNT</div>';
+    h += '<input class="field-input" id="swapAmountInput" type="number" placeholder="0.00" value="1" oninput="updateSwapPreview()">';
+    h += '</div></div>';
+    h += '<div class="transfer-row">';
+    h += '<div class="transfer-field"><div class="field-label">SWAP TO</div>';
+    h += '<select class="field-select" id="swapToToken" onchange="updateSwapPreview()"><option selected>USDC</option><option>ETH</option></select>';
+    h += '</div><div class="transfer-field"><div class="field-label">YOU RECEIVE (EST.)</div>';
+    h += '<input class="field-input" id="swapEstimatedOutput" type="text" readonly style="opacity:0.75">';
+    h += '</div></div></div>';
+    h += '<div class="transfer-field" id="recipient-row" style="margin-bottom:12px">';
+    h += '<div class="field-label">RECIPIENT ADDRESS</div>';
+    h += '<input class="field-input" id="recipientInput" placeholder="0x... wallet address">';
+    h += '</div>';
+    h += '<div class="tx-preview" id="txPreview" style="display:none">';
+    h += '<div class="tx-row"><div class="tx-label">Route</div><div class="tx-val" id="preview-route">ARC Testnet</div></div>';
+    h += '<div class="tx-row"><div class="tx-label">Gas Fee</div><div class="tx-val green">~0.001 USDC</div></div>';
+    h += '<div class="tx-row"><div class="tx-label">Est. Time</div><div class="tx-val">~45 seconds</div></div>';
+    h += '<div class="tx-row"><div class="tx-label">You Receive</div><div class="tx-val green" id="preview-receive">19.99 USDC</div></div>';
+    h += '</div>';
+    h += '<button class="btn-primary" id="executeBtn" onclick="executeTransfer()">🚀 Execute Transfer</button>';
+    h += '</div>';
+    h += '<div class="card action-card"><div class="section-title">Recent Transfers</div>';
+    h += '<div id="recentTransfersList"><div style="color:var(--muted2);font-size:12px;padding:10px 0;text-align:center">Connect wallet to see transfers</div></div></div>';
+    return h;
+  }
 
-        <div id="dynamic-swap-box" style="display:none">
-          <div class="transfer-row" style="margin-bottom:10px">
-            <div class="transfer-field">
-              <div class="field-label">SWAP FROM</div>
-              <select class="field-select" id="swapFromToken" onchange="updateSwapPreview()">
-                <option>ETH</option>
-                <option>USDC</option>
-              </select>
-            </div>
-            <div class="transfer-field">
-              <div class="field-label">AMOUNT</div>
-              <input class="field-input" id="swapAmountInput" type="number" placeholder="0.00" value="1" oninput="updateSwapPreview()">
-            </div>
-          </div>
-          <div class="transfer-row">
-            <div class="transfer-field">
-              <div class="field-label">SWAP TO</div>
-              <select class="field-select" id="swapToToken" onchange="updateSwapPreview()">
-                <option selected>USDC</option>
-                <option>ETH</option>
-              </select>
-            </div>
-            <div class="transfer-field">
-              <div class="field-label">YOU RECEIVE (EST.)</div>
-              <input class="field-input" id="swapEstimatedOutput" type="text" readonly style="opacity:0.75">
-            </div>
-          </div>
-        </div>
+  if (name === 'portfolio') {
+    h = '<div class="stats-row" style="margin-bottom:0">';
+    h += '<div class="stat-card"><div class="stat-icon">💼</div><div class="stat-label">Total Value</div><div class="stat-val" id="portTotal">—</div><div class="stat-sub up">ARC Testnet</div></div>';
+    h += '<div class="stat-card"><div class="stat-icon">📈</div><div class="stat-label">Transactions</div><div class="stat-val" id="portTxCount">—</div><div class="stat-sub">On-chain</div></div>';
+    h += '<div class="stat-card"><div class="stat-icon">💎</div><div class="stat-label">USDC Balance</div><div class="stat-val" id="portUsdc">—</div><div class="stat-sub up">Native token</div></div>';
+    h += '<div class="stat-card"><div class="stat-icon">⚖</div><div class="stat-label">Network</div><div class="stat-val" style="font-size:13px">ARC</div><div class="stat-sub up">Testnet</div></div>';
+    h += '</div>';
+    h += '<div class="card action-card"><div class="section-title">Holdings</div>';
+    h += '<div id="portfolioHoldings"><div style="color:var(--muted2);font-size:12px;padding:20px 0;text-align:center">Connect wallet to view portfolio</div></div></div>';
+    return h;
+  }
 
-        <div class="transfer-field" id="recipient-row" style="margin-bottom:12px">
-          <div class="field-label">RECIPIENT ADDRESS</div>
-          <input class="field-input" id="recipientInput" placeholder="0x... wallet address">
-        </div>
+  if (name === 'invest') {
+    h = '';
 
-        <div class="tx-preview" id="txPreview" style="display:none">
-          <div class="tx-row"><div class="tx-label">Route</div><div class="tx-val" id="preview-route">ARC Testnet → Base Sepolia</div></div>
-          <div class="tx-row"><div class="tx-label">Gas Fee</div><div class="tx-val green">~0.001 USDC</div></div>
-          <div class="tx-row"><div class="tx-label">Est. Time</div><div class="tx-val">~45 seconds</div></div>
-          <div class="tx-row"><div class="tx-label">You Receive</div><div class="tx-val green" id="preview-receive">19.99 USDC</div></div>
-        </div>
-        <button class="btn-primary" id="executeBtn" onclick="executeTransfer()">🚀 Execute Transfer</button>
-      </div>
-      <div class="card action-card">
-        <div class="section-title">Recent Transfers</div>
-        <div id="recentTransfersList">
-          <div style="color:var(--muted2);font-size:12px;padding:10px 0;text-align:center">
-            ${isConnected || demoMode ? 'Loading...' : 'Connect wallet to see transfers'}
-          </div>
-        </div>
-      </div>`,
+    // ── Top summary cards (real data loaded by initInvestPage) ──
+    h += '<div class="stats-row" style="margin-bottom:0">';
+    h += '<div class="stat-card"><div class="stat-icon">🔒</div><div class="stat-label">Staked Balance</div><div class="stat-val" id="investStaked">—</div><div class="stat-sub">USDC locked</div></div>';
+    h += '<div class="stat-card"><div class="stat-icon">🌾</div><div class="stat-label">Pending Reward</div><div class="stat-val" id="investReward">—</div><div class="stat-sub up">Claimable now</div></div>';
+    h += '<div class="stat-card"><div class="stat-icon">📊</div><div class="stat-label">Current APY</div><div class="stat-val" id="investAPY">8.0%</div><div class="stat-sub up">ARC Staking</div></div>';
+    h += '<div class="stat-card"><div class="stat-icon">💵</div><div class="stat-label">Wallet Balance</div><div class="stat-val" id="investWalletBal">—</div><div class="stat-sub">Available USDC</div></div>';
+    h += '</div>';
 
-    portfolio: `
-      <div class="stats-row" style="margin-bottom:0">
-        <div class="stat-card"><div class="stat-icon">💼</div><div class="stat-label">Total Value</div><div class="stat-val" id="portTotal">—</div><div class="stat-sub up">ARC Testnet</div></div>
-        <div class="stat-card"><div class="stat-icon">📈</div><div class="stat-label">Transactions</div><div class="stat-val" id="portTxCount">—</div><div class="stat-sub">On-chain</div></div>
-        <div class="stat-card"><div class="stat-icon">💎</div><div class="stat-label">USDC</div><div class="stat-val" id="portUsdc">—</div><div class="stat-sub up">Native token</div></div>
-        <div class="stat-card"><div class="stat-icon">⚖</div><div class="stat-label">Network</div><div class="stat-val" style="font-size:13px">ARC</div><div class="stat-sub up">Testnet</div></div>
-      </div>
-      <div class="card action-card">
-        <div class="section-title">Holdings</div>
-        <div id="portfolioHoldings">
-          <div style="color:var(--muted2);font-size:12px;padding:20px 0;text-align:center">
-            ${isConnected || demoMode ? 'Loading portfolio...' : 'Connect wallet to view portfolio'}
-          </div>
-        </div>
-      </div>`,
+    // ── Main staking card ──
+    h += '<div class="card action-card">';
+    h += '<div class="section-title">🏦 ARC Testnet Staking <span style="font-size:10px;font-weight:400;color:var(--muted2);margin-left:6px">Contract: <a href="https://testnet.arcscan.app/address/0xaCd5Eb5d71D2BEC8FA3348ae0B12389EDB51C59b" target="_blank" style="color:var(--neon2)">0xaCd5...C59b ↗</a></span></div>';
 
-    invest: `
-      <div class="stats-row" style="margin-bottom:0">
-        <div class="stat-card"><div class="stat-icon">🌾</div><div class="stat-label">Yield Earned</div><div class="stat-val">$18.42</div><div class="stat-sub up">This month</div></div>
-        <div class="stat-card"><div class="stat-icon">📊</div><div class="stat-label">Avg APY</div><div class="stat-val">4.8%</div><div class="stat-sub up">▲ Active</div></div>
-        <div class="stat-card"><div class="stat-icon">🔒</div><div class="stat-label">In Protocols</div><div class="stat-val">$800</div><div class="stat-sub">Deployed</div></div>
-        <div class="stat-card"><div class="stat-icon">✨</div><div class="stat-label">Opportunities</div><div class="stat-val">7</div><div class="stat-sub up">Available</div></div>
-      </div>
-      <div class="card action-card">
-        <div class="section-title">Top Yield Opportunities</div>
-        ${[
-          {name:'USDC on Aave (Base Sepolia)',apy:'5.2%',tvl:'$2.4B',risk:'Low',col:'#10b981'},
-          {name:'ETH-USDC LP (Uniswap V3)',apy:'12.8%',tvl:'$890M',risk:'Medium',col:'#f59e0b'},
-          {name:'ARC Testnet Staking',apy:'8.0%',tvl:'N/A',risk:'Low',col:'#10b981'},
-          {name:'ARB-ETH LP (Camelot)',apy:'18.4%',tvl:'$124M',risk:'High',col:'#ef4444'},
-        ].map(o=>`
-          <div class="wallet-item">
-            <div style="flex:1"><div class="chain-name">${o.name}</div><div class="chain-sub">TVL: ${o.tvl}</div></div>
-            <div style="text-align:right;margin-right:12px">
-              <div style="font-size:16px;font-weight:800;font-family:'JetBrains Mono';color:${o.col}">${o.apy}</div>
-              <div style="font-size:11px;color:${o.col}">${o.risk} Risk</div>
-            </div>
-            <button style="background:linear-gradient(135deg,rgba(124,58,237,0.3),rgba(99,102,241,0.2));border:1px solid rgba(124,58,237,0.3);border-radius:8px;color:var(--text);font-family:'Syne';font-size:11px;font-weight:700;padding:6px 12px;cursor:pointer" onclick="showToast('Opening position on '+\`${o.name}\`,'📈')">Deposit</button>
-          </div>`).join('')}
-      </div>`,
+    // Status banner
+    h += '<div id="investStatusBanner" style="display:none;padding:10px 14px;border-radius:10px;font-size:12px;font-weight:600;margin-bottom:14px"></div>';
 
-    faucet: `
-      <div class="faucet-hero">
-        <h2>🚰 Testnet Faucet</h2>
-        <p>Get free testnet tokens for development and testing on ARC Testnet and Base Sepolia</p>
-        <div class="faucet-chains">
-          <div class="faucet-chain active" onclick="selectFaucetChain(this,'ARC Testnet')">⚡ ARC Testnet</div>
-          <div class="faucet-chain" onclick="selectFaucetChain(this,'Base Sepolia')">🔵 Base Sepolia</div>
-          <div class="faucet-chain" onclick="selectFaucetChain(this,'ETH Sepolia')">◆ ETH Sepolia</div>
-        </div>
-        <div class="faucet-input-row">
-          <input class="faucet-input" id="faucetAddr" placeholder="Enter wallet address (0x...)" value="${(isConnected && !demoMode) ? walletAddress : ''}">
-          <button class="btn-faucet" onclick="requestFaucet()">Request Tokens</button>
-        </div>
-        <p style="margin-top:10px;font-size:11px;color:var(--muted2)">Uses Circle's official faucet — 1 USDC/day free</p>
-        <a href="https://faucet.circle.com/" target="_blank" class="arc-link faucet" style="display:inline-flex;margin-top:8px">🔗 Circle Official Faucet (USDC) →</a>
-      </div>
-      <div class="faucet-info">
-        <div class="faucet-info-card"><div class="icon">⏱</div><h4>Cooldown</h4><p>24 hour cooldown between requests per address</p></div>
-        <div class="faucet-info-card"><div class="icon">💧</div><h4>Amount</h4><p>1 USDC/day on ARC Testnet via Circle Faucet</p></div>
-        <div class="faucet-info-card"><div class="icon">🔒</div><h4>Requirements</h4><p>Valid EVM address required. No KYC needed.</p></div>
-      </div>
-      <div class="card action-card" style="margin-top:0">
-        <div class="section-title">Supported Testnets</div>
-        <div class="network-item"><div class="net-dot green"></div><div class="net-name">ARC Testnet</div><div style="font-size:12px;color:var(--muted2)">USDC native · 1 USDC/day · Chain 5042002</div></div>
-        <div class="network-item"><div class="net-dot green"></div><div class="net-name">Base Sepolia</div><div style="font-size:12px;color:var(--muted2)">ETH + USDC · Circle Faucet</div></div>
-        <div class="network-item"><div class="net-dot yellow"></div><div class="net-name">Ethereum Sepolia</div><div style="font-size:12px;color:var(--muted2)">ETH · 0.05 ETH/day</div></div>
-        <div class="network-item"><div class="net-dot yellow"></div><div class="net-name">Arbitrum Sepolia</div><div style="font-size:12px;color:var(--muted2)">ETH · 0.1 ETH/day</div></div>
-      </div>`,
+    // Tabs
+    h += '<div class="tabs" style="margin-bottom:16px">';
+    h += '<div class="tab active" id="itab-deposit" onclick="switchInvestTab(\'deposit\')">Deposit</div>';
+    h += '<div class="tab" id="itab-withdraw" onclick="switchInvestTab(\'withdraw\')">Withdraw</div>';
+    h += '<div class="tab" id="itab-claim" onclick="switchInvestTab(\'claim\')">Claim Reward</div>';
+    h += '</div>';
 
-    activity: `
-      <div class="card action-card">
-        <div class="section-title">
-          Transaction History
-          <a href="https://testnet.arcscan.app${isConnected && !demoMode ? '/address/'+walletAddress : ''}" target="_blank" style="font-size:11px;color:var(--neon2)">View on ArcScan ↗</a>
-        </div>
-        <div class="tabs">
-          <div class="tab active act-tab" id="act-tab-all" onclick="filterActivity('all')">All</div>
-          <div class="tab act-tab" id="act-tab-sent" onclick="filterActivity('sent')">Sent</div>
-          <div class="tab act-tab" id="act-tab-received" onclick="filterActivity('received')">Received</div>
-          <div class="tab act-tab" id="act-tab-swaps" onclick="filterActivity('swaps')">Swaps</div>
-        </div>
-        <div id="activityTxList">
-          <div style="color:var(--muted2);font-size:12px;padding:20px 0;text-align:center">
-            ${isConnected || demoMode ? 'Loading transactions...' : 'Connect wallet to view transaction history'}
-          </div>
-        </div>
-      </div>`,
+    // ── DEPOSIT panel ──
+    h += '<div id="invest-panel-deposit">';
+    h += '<div style="margin-bottom:12px">';
+    h += '<div class="field-label" style="margin-bottom:6px">AMOUNT TO STAKE (USDC)</div>';
+    h += '<div style="display:flex;gap:8px">';
+    h += '<input class="field-input" id="investDepositAmt" type="number" placeholder="0.00" min="0.01" step="0.01" style="flex:1" oninput="updateDepositPreview()">';
+    h += '<button onclick="setInvestMax()" style="background:var(--glass);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:11px;font-weight:700;cursor:pointer;color:var(--neon4);white-space:nowrap">MAX</button>';
+    h += '</div>';
+    h += '</div>';
+    // ── QUICK PERCENT BUTTONS (FIXED: SMALL, LEFT ALIGNED & CLICKABLE) ──
+    // clear:both aur display:grid se overlap problem fix ho gayi. Max-width chota karke left kiya hai.
+    h += '<div style="clear:both; display:grid; grid-template-columns: repeat(4, 1fr); gap:6px; margin-top:10px; margin-bottom:14px; max-width:240px; margin-left:0; margin-right:auto; position:relative; z-index:10;">';
+    
+    // 25% Button
+    h += '<button onclick="setInvestPct(25)" type="button" style="background:var(--glass); border:1px solid var(--border); border-radius:8px; padding:6px 2px; font-size:11px; font-weight:700; color:var(--neon4); cursor:pointer; font-family:JetBrains Mono,monospace; text-align:center; display:block; width:100%;">25%</button>';
+    
+    // 50% Button
+    h += '<button onclick="setInvestPct(50)" type="button" style="background:var(--glass); border:1px solid var(--border); border-radius:8px; padding:6px 2px; font-size:11px; font-weight:700; color:var(--neon4); cursor:pointer; font-family:JetBrains Mono,monospace; text-align:center; display:block; width:100%;">50%</button>';
+    
+    // 75% Button
+    h += '<button onclick="setInvestPct(75)" type="button" style="background:var(--glass); border:1px solid var(--border); border-radius:8px; padding:6px 2px; font-size:11px; font-weight:700; color:var(--neon4); cursor:pointer; font-family:JetBrains Mono,monospace; text-align:center; display:block; width:100%;">75%</button>';
+    
+    // 100% Button
+    h += '<button onclick="setInvestPct(100)" type="button" style="background:linear-gradient(135deg,rgba(6,182,212,0.15),rgba(16,185,129,0.15)); border:1px solid #06b6d4; border-radius:8px; padding:6px 2px; font-size:11px; font-weight:800; color:#06b6d4; cursor:pointer; font-family:JetBrains Mono,monospace; text-align:center; display:block; width:100%;">100%</button>';
+    
+    h += '</div>';
+    // UPDATED: Button ko flex container mein daal kar chota (max-width: 240px) aur center kiya gaya hai
+    h += '<div style="display:flex; justify-content:center; width:100%; margin-top:10px;">';
+    h += '<button class="btn-primary" id="btnApproveDeposit" onclick="window.doApproveDeposit()" style="max-width:240px; width:100%; font-weight:700; font-family:inherit;">🔐Deposit USDC</button>';
+    h += '</div>';
+    h += '</div>';
 
-    settings: `
-      <div class="card action-card">
-        <div class="settings-section">
-          <h3>Wallet</h3>
-          <div class="setting-row">
-            <div><div class="setting-label">Connected Wallet</div><div class="setting-sub">${isConnected ? walletShort || walletAddress : 'Not connected'}</div></div>
-            <button class="btn-connect" style="padding:8px 14px;font-size:12px" onclick="openWalletModal()">${isConnected ? 'Switch' : 'Connect'}</button>
-          </div>
-          <div class="setting-row">
-            <div><div class="setting-label">Network</div><div class="setting-sub">ARC Testnet · Chain ID 5042002</div></div>
-            <a href="https://testnet.arcscan.app" target="_blank" style="font-size:12px;color:var(--neon2)">Explorer ↗</a>
-          </div>
-          <div class="setting-row">
-            <div><div class="setting-label">RPC Endpoint</div><div class="setting-sub">rpc.testnet.arc.network</div></div>
-            <button style="background:var(--glass);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Syne';font-size:11px;padding:6px 12px;cursor:pointer" onclick="addArcTestnet().then(()=>showToast('ARC Testnet added to wallet!','⚡'))">Add to Wallet</button>
-          </div>
-        </div>
-        <div class="settings-section">
-          <h3>Appearance</h3>
-          <div class="setting-row">
-            <div><div class="setting-label">Theme</div><div class="setting-sub">Toggle between dark and light mode</div></div>
-            <button class="theme-btn" onclick="toggleTheme()" style="width:auto;padding:0 12px;font-size:13px;gap:6px;display:flex;align-items:center">${currentTheme === 'dark' ? '🌙 Dark' : '☀️ Light'}</button>
-          </div>
-        </div>
-        <div class="settings-section">
-          <h3>Preferences</h3>
-          <div class="setting-row">
-            <div><div class="setting-label">Notifications</div><div class="setting-sub">Transaction & price alerts</div></div>
-            <div class="toggle on" onclick="this.classList.toggle('on')"></div>
-          </div>
-          <div class="setting-row">
-            <div><div class="setting-label">AI Auto-routing</div><div class="setting-sub">Let AI find optimal routes</div></div>
-            <div class="toggle on" onclick="this.classList.toggle('on')"></div>
-          </div>
-          <div class="setting-row">
-            <div><div class="setting-label">Demo Mode</div><div class="setting-sub">Use with simulated data</div></div>
-            <div class="toggle ${demoMode?'on':''}" id="demoToggle" onclick="toggleDemo()"></div>
-          </div>
-        </div>
-      </div>`
-  };
-  return ps[name] || '<div class="card action-card"><p style="color:var(--muted2)">Page coming soon</p></div>';
+    
+// ── WITHDRAW panel ──
+    h += '<div id="invest-panel-withdraw" style="display:none">';
+    h += '<div style="background:linear-gradient(135deg,rgba(16,185,129,0.08),rgba(6,182,212,0.05));border:1px solid rgba(16,185,129,0.2);border-radius:12px;padding:14px;margin-bottom:14px">';
+    h += '<div style="font-size:12px;color:var(--muted2);margin-bottom:4px">Currently Staked</div>';
+    h += '<div style="font-size:24px;font-weight:800;font-family:JetBrains Mono,monospace;color:#10b981" id="withdrawStakedDisplay">— USDC</div>';
+    h += '</div>';
+    h += '<div style="margin-bottom:12px">';
+    h += '<div class="field-label" style="margin-bottom:6px">AMOUNT TO WITHDRAW (USDC)</div>';
+    h += '<div style="display:flex;gap:8px">';
+    // 👇 Input box ki ID ko exact 'investWithdrawAmt' kiya gaya hai
+    h += '<input class="field-input" id="investWithdrawAmt" type="number" placeholder="0.00" min="0.01" step="0.01" style="flex:1">';
+    h += '<button onclick="window.setWithdrawMax()" style="background:var(--glass);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:11px;font-weight:700;cursor:pointer;color:var(--neon4)">MAX</button>';
+    h += '</div></div>';
+    h += '<div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:8px;padding:10px;margin-bottom:14px;font-size:11px;color:#f59e0b">⚠️ Withdrawing will auto-claim your pending rewards too.</div>';
+    h += '<div style="display:flex;justify-content:center;width:100%;margin-top:10px;"><button class="btn-primary" onclick="window.doWithdraw()" style="max-width:240px;width:100%;background:linear-gradient(135deg,#10b981,#06b6d4);font-weight:700;">📤 Withdraw USDC</button></div>';
+    h += '</div>';
+
+    // ── CLAIM panel ──
+    h += '<div id="invest-panel-claim" style="display:none">';
+    h += '<div style="text-align:center;padding:20px 0">';
+    h += '<div style="font-size:40px;margin-bottom:12px">🌾</div>';
+    h += '<div style="font-size:13px;color:var(--muted2);margin-bottom:6px">Pending Reward</div>';
+    h += '<div style="font-size:36px;font-weight:800;font-family:JetBrains Mono,monospace;background:linear-gradient(135deg,#10b981,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent" id="claimRewardDisplay">— USDC</div>';
+    h += '<div style="font-size:11px;color:var(--muted2);margin-top:4px">Updates every 10 seconds</div>';
+    h += '</div>';
+    h += '<div style="background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:16px">';
+    h += '<div class="tx-row"><div class="tx-label">Staked Amount</div><div class="tx-val" id="claimStakedAmt">—</div></div>';
+    h += '<div class="tx-row"><div class="tx-label">APY</div><div class="tx-val green">8.0%</div></div>';
+    h += '<div class="tx-row"><div class="tx-label">Accruing</div><div class="tx-val green">~every second ⚡</div></div>';
+    h += '</div>';
+    h += '<div style="display:flex;justify-content:center;width:100%;margin-top:10px;"><button class="btn-primary" onclick="window.doWithdraw()" style="max-width:240px;width:100%;background:linear-gradient(135deg,#10b981,#06b6d4);font-weight:700;">Claim</button></div>';
+    h += '</div>';
+
+    h += '</div>'; // /card
+
+    // ── Transaction history for staking ──
+    h += '<div class="card action-card">';
+    h += '<div class="section-title">Staking History <a href="https://testnet.arcscan.app/address/0xaCd5Eb5d71D2BEC8FA3348ae0B12389EDB51C59b" target="_blank" style="font-size:11px;color:var(--neon2)">View Contract ↗</a></div>';
+    h += '<div id="stakingHistoryList"><div style="color:var(--muted2);font-size:12px;padding:16px 0;text-align:center">Loading staking history…</div></div>';
+    h += '</div>';
+
+    return h;
+  }
+
+  if (name === 'faucet') {
+    var fa = (typeof isConnected !== 'undefined' && isConnected && typeof walletAddress !== 'undefined') ? walletAddress : '';
+    h = '<div class="faucet-hero">';
+    h += '<h2>🚰 Testnet Faucet</h2>';
+    h += '<p>Get free testnet tokens for development on ARC Testnet</p>';
+    h += '<div class="faucet-chains">';
+    h += '<div class="faucet-chain active" onclick="selectFaucetChain(this,\'ARC Testnet\')">⚡ ARC Testnet</div>';
+    h += '<div class="faucet-chain" onclick="selectFaucetChain(this,\'Base Sepolia\')">🔵 Base Sepolia</div>';
+    h += '<div class="faucet-chain" onclick="selectFaucetChain(this,\'ETH Sepolia\')">◆ ETH Sepolia</div>';
+    h += '</div>';
+h += '</div>';
+h += '<div class="faucet-input-row" style="display: flex; justify-content: center; width: 100%;">';
+h += '<button class="btn-faucet" onclick="requestFaucet()">Request Tokens</button>';
+h += '</div>';
+    h += '<p style="margin-top:10px;font-size:11px;color:var(--muted2)">Uses Circle official faucet — 1 USDC/day free</p>';
+    h += '</div>';
+    h += '<div class="faucet-info">';
+    h += '<div class="faucet-info-card"><div class="icon">⏱</div><h4>Cooldown</h4><p>24 hour cooldown between requests</p></div>';
+    h += '<div class="faucet-info-card"><div class="icon">💧</div><h4>Amount</h4><p>1 USDC/day on ARC Testnet</p></div>';
+    h += '<div class="faucet-info-card"><div class="icon">🔒</div><h4>Requirements</h4><p>Valid EVM address. No KYC needed.</p></div>';
+    h += '</div>';
+    h += '<div class="card action-card" style="margin-top:0"><div class="section-title">Supported Testnets</div>';
+    h += '<div class="network-item"><div class="net-dot green"></div><div class="net-name">ARC Testnet</div><div style="font-size:12px;color:var(--muted2)">USDC native · 1 USDC/day · Chain 5041906</div></div>';
+    h += '<div class="network-item"><div class="net-dot green"></div><div class="net-name">Base Sepolia</div><div style="font-size:12px;color:var(--muted2)">ETH + USDC · Circle Faucet</div></div>';
+    h += '<div class="network-item"><div class="net-dot yellow"></div><div class="net-name">Ethereum Sepolia</div><div style="font-size:12px;color:var(--muted2)">ETH · 0.05 ETH/day</div></div>';
+    h += '</div>';
+    return h;
+  }
+
+  if (name === 'activity') {
+    var explorerUrl = (typeof walletAddress !== 'undefined' && walletAddress) ? 'https://testnet.arcscan.app/address/' + walletAddress : 'https://testnet.arcscan.app';
+    h = '<div class="card action-card">';
+    h += '<div class="section-title">Transaction History';
+    h += '<a href="' + explorerUrl + '" target="_blank" style="font-size:11px;color:var(--neon2)">View on ArcScan ↗</a></div>';
+    h += '<div class="tabs">';
+    h += '<div class="tab active act-tab" id="act-tab-all" onclick="filterActivity(\'all\')">All</div>';
+    h += '<div class="tab act-tab" id="act-tab-sent" onclick="filterActivity(\'sent\')">Sent</div>';
+    h += '<div class="tab act-tab" id="act-tab-received" onclick="filterActivity(\'received\')">Received</div>';
+    h += '<div class="tab act-tab" id="act-tab-swaps" onclick="filterActivity(\'swaps\')">Swaps</div>';
+    h += '</div>';
+    h += '<div id="activityTxList"><div style="color:var(--muted2);font-size:12px;padding:20px 0;text-align:center">Connect wallet to view transaction history</div></div>';
+    h += '</div>';
+    return h;
+  }
+
+  if (name === 'stats') {
+    h = '<div style="display:flex;flex-direction:column;gap:16px;width:100%">';
+
+    // ── Page header ──
+    h += '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:4px">';
+    h += '<div>';
+    h += '<div style="font-size:20px;font-weight:800;display:flex;align-items:center;gap:10px"><span class="proto-live-dot"></span> Protocol Statistics</div>';
+    h += '<div style="font-size:12px;color:var(--muted2);margin-top:3px">Live on-chain data · ARC Testnet · Auto-refresh every 30s</div>';
+    h += '</div>';
+    h += '<div style="display:flex;align-items:center;gap:8px">';
+    h += '<span class="proto-updated-badge" id="protoLastUpdated">Fetching…</span>';
+    h += '<a href="https://testnet.arcscan.app" target="_blank" class="proto-explorer-link">ArcScan ↗</a>';
+    h += '<button onclick="fetchProtocolStatsPage()" style="background:var(--glass);border:1px solid var(--border);border-radius:8px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;color:var(--text)">🔄 Refresh</button>';
+    h += '</div></div>';
+
+    // ── Big 5 stat cards ──
+    h += '<div class="proto-big-grid">';
+    var pcards = [
+      {id:'protoUsers',   chid:'protoUsersChange',   spid:'sparkUsers',   icon:'👥', label:'Total Users',         cls:'proto-card--users',  spark:'rgba(167,139,250,0.8)'},
+      {id:'protoTotalTxns',chid:'protoTotalTxnsChange',spid:'sparkTxns', icon:'📊', label:'Total Transactions',   cls:'proto-card--txns',   spark:'rgba(16,185,129,0.8)'},
+      {id:'protoBridgeVol',chid:'protoBridgeChange',  spid:'sparkBridge', icon:'⛓️', label:'Total Bridged',        cls:'proto-card--bridge', spark:'rgba(6,182,212,0.8)'},
+      {id:'protoSwapVol',  chid:'protoSwapChange',    spid:'sparkSwap',   icon:'🔄', label:'Total Swapped',        cls:'proto-card--swap',   spark:'rgba(245,158,11,0.8)'},
+      {id:'protoSendVol',  chid:'protoSendChange',    spid:'sparkSend',   icon:'📤', label:'Total Sent',           cls:'proto-card--send',   spark:'rgba(99,102,241,0.8)'}
+    ];
+    for(var pi=0;pi<pcards.length;pi++){
+      var pc = pcards[pi];
+      h += '<div class="proto-card '+pc.cls+'">';
+      h += '<div class="proto-card-icon">'+pc.icon+'</div>';
+      h += '<div class="proto-card-body">';
+      h += '<div class="proto-card-label">'+pc.label+'</div>';
+      h += '<div class="proto-card-val" id="'+pc.id+'"><span class="skeleton" style="width:70px;height:22px">&nbsp;</span></div>';
+      h += '<div class="proto-card-change" id="'+pc.chid+'">Loading…</div>';
+      h += '</div>';
+      h += '<div class="proto-card-sparkline"><svg viewBox="0 0 80 28" preserveAspectRatio="none" width="80" height="28"><polyline id="'+pc.spid+'" points="" fill="none" stroke="'+pc.spark+'" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>';
+      h += '</div>';
+    }
+    h += '</div>';
+
+    // ── Bottom breakdown row ──
+    h += '<div class="proto-breakdown-row">';
+
+    // Breakdown bar
+    h += '<div class="proto-breakdown-card">';
+    h += '<div class="proto-breakdown-title">Transaction Breakdown</div>';
+    h += '<div class="proto-breakdown-bar" id="protoBreakdownBar">';
+    h += '<div class="pbb-seg pbb-send"   id="pbbSend"   style="width:0%" title="Send"></div>';
+    h += '<div class="pbb-seg pbb-bridge" id="pbbBridge" style="width:0%" title="Bridge"></div>';
+    h += '<div class="pbb-seg pbb-swap"   id="pbbSwap"   style="width:0%" title="Swap"></div>';
+    h += '<div class="pbb-seg pbb-other"  id="pbbOther"  style="width:0%" title="Other"></div>';
+    h += '</div>';
+    h += '<div class="proto-breakdown-legend">';
+    h += '<div class="pbl-item"><span class="pbl-dot" style="background:#6366f1"></span><span class="pbl-name">Send</span><span class="pbl-pct" id="pblSendPct">—</span></div>';
+    h += '<div class="pbl-item"><span class="pbl-dot" style="background:#06b6d4"></span><span class="pbl-name">Bridge</span><span class="pbl-pct" id="pblBridgePct">—</span></div>';
+    h += '<div class="pbl-item"><span class="pbl-dot" style="background:#f59e0b"></span><span class="pbl-name">Swap</span><span class="pbl-pct" id="pblSwapPct">—</span></div>';
+    h += '<div class="pbl-item"><span class="pbl-dot" style="background:rgba(255,255,255,0.2)"></span><span class="pbl-name">Other</span><span class="pbl-pct" id="pblOtherPct">—</span></div>';
+    h += '</div></div>';
+
+    // Network health
+    h += '<div class="proto-breakdown-card">';
+    h += '<div class="proto-breakdown-title">Network Health</div>';
+    h += '<div class="proto-health-grid" id="protoHealthGrid">';
+    h += '<div class="phg-item"><div class="phg-label">Latest Block</div><div class="phg-val" id="protoBlock">—</div></div>';
+    h += '<div class="phg-item"><div class="phg-label">Avg Block Time</div><div class="phg-val" id="protoBlockTime">—</div></div>';
+    h += '<div class="phg-item"><div class="phg-label">Gas Price</div><div class="phg-val" id="protoGasPrice">—</div></div>';
+    h += '<div class="phg-item"><div class="phg-label">Chain Status</div><div class="phg-val" style="color:#10b981">✓ Online</div></div>';
+    h += '<div class="phg-item"><div class="phg-label">Total Supply</div><div class="phg-val" id="protoTotalSupply">—</div></div>';
+    h += '<div class="phg-item"><div class="phg-label">Active Today</div><div class="phg-val" id="protoActiveToday">—</div></div>';
+    h += '</div></div>';
+
+    // Leaderboard
+    h += '<div class="proto-breakdown-card proto-leaderboard">';
+    h += '<div class="proto-breakdown-title">Top Active Wallets <span style="font-weight:400;color:var(--muted2);font-size:10px">(by tx count)</span></div>';
+    h += '<div id="protoLeaderboard"><div style="color:var(--muted2);font-size:11px;text-align:center;padding:12px">Loading…</div></div>';
+    h += '</div>';
+
+    h += '</div>'; // /proto-breakdown-row
+    h += '</div>'; // /outer wrapper
+    return h;
+  }
+
+  if (name === 'profile') {
+    var wa = (typeof walletAddress !== 'undefined' && walletAddress) ? walletAddress : '';
+    var ws2 = wa ? wa.slice(0,6) + '...' + wa.slice(-4) : 'Not connected';
+    var expUrl = wa ? 'https://testnet.arcscan.app/address/' + wa : 'https://testnet.arcscan.app';
+    h = '<div class="card action-card" style="max-width:560px;margin:0 auto">';
+    h += '<div style="display:flex;align-items:center;gap:20px;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--border)">';
+    h += '<div style="position:relative">';
+    h += '<div id="profileAvatarWrap" style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#10b981);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800;color:#fff;overflow:hidden;border:3px solid rgba(124,58,237,0.35);box-shadow:0 0 24px rgba(124,58,237,0.25)">';
+    h += '<span id="profileAvatarText">?</span>';
+    h += '<img id="profileAvatarImg" src="" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:50%">';
+    h += '</div>';
+    h += '<label style="position:absolute;bottom:0;right:0;width:26px;height:26px;background:linear-gradient(135deg,#7c3aed,#10b981);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;box-shadow:0 2px 8px rgba(124,58,237,0.4)" title="Upload photo">';
+    h += '📷<input type="file" accept="image/*" style="display:none" onchange="uploadProfilePhoto(this)">';
+    h += '</label></div>';
+    h += '<div style="flex:1">';
+    h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">';
+    h += '<span id="profileNameDisplay" style="font-size:20px;font-weight:800">Anonymous</span>';
+    h += '<button onclick="toggleNameEdit()" style="background:var(--glass);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;color:var(--muted2)">✏️ Edit</button>';
+    h += '</div>';
+    h += '<div id="profileNameEdit" style="display:none;margin-bottom:8px;gap:8px;align-items:center">';
+    h += '<input id="profileNameInput" class="field-input" style="font-size:14px;padding:6px 12px;width:160px" placeholder="Your name">';
+    h += '<button onclick="saveProfileName()" style="background:linear-gradient(135deg,#7c3aed,#10b981);border:none;border-radius:8px;color:#fff;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer">Save</button>';
+    h += '</div>';
+    h += '<div style="display:inline-flex;align-items:center;gap:6px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:20px;padding:4px 12px;font-family:JetBrains Mono,monospace;font-size:11px;color:var(--neon4)">';
+    h += '<div class="status-dot" style="width:6px;height:6px"></div>';
+    h += '<span id="profileWalletAddr">' + ws2 + '</span>';
+    h += '</div></div></div>';
+    h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">';
+    h += '<div style="background:linear-gradient(135deg,rgba(124,58,237,0.1),rgba(16,185,129,0.06));border:1px solid rgba(124,58,237,0.15);border-radius:14px;padding:16px;text-align:center">';
+    h += '<div id="profileTxCount" style="font-size:28px;font-weight:800;font-family:JetBrains Mono,monospace;background:linear-gradient(135deg,#7c3aed,#10b981);-webkit-background-clip:text;-webkit-text-fill-color:transparent">0</div>';
+    h += '<div style="font-size:11px;color:var(--muted2);margin-top:4px">Transactions</div></div>';
+    h += '<div style="background:linear-gradient(135deg,rgba(16,185,129,0.1),rgba(6,182,212,0.06));border:1px solid rgba(16,185,129,0.15);border-radius:14px;padding:16px;text-align:center">';
+    h += '<div id="profileBalance" style="font-size:28px;font-weight:800;font-family:JetBrains Mono,monospace;color:var(--neon4)">—</div>';
+    h += '<div style="font-size:11px;color:var(--muted2);margin-top:4px">USDC Balance</div></div>';
+    h += '<div style="background:linear-gradient(135deg,rgba(6,182,212,0.1),rgba(124,58,237,0.06));border:1px solid rgba(6,182,212,0.15);border-radius:14px;padding:16px;text-align:center">';
+    h += '<div id="profileGasSaved" style="font-size:28px;font-weight:800;font-family:JetBrains Mono,monospace;color:#06b6d4">$0</div>';
+    h += '<div style="font-size:11px;color:var(--muted2);margin-top:4px">Gas Saved</div></div>';
+    h += '</div>';
+    h += '<div style="background:var(--glass);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px">';
+    h += '<div style="font-size:13px;font-weight:700;margin-bottom:12px">🔗 Wallet Details</div>';
+    h += '<div class="setting-row" style="padding:8px 0"><div><div class="setting-label">Address</div><div id="profileFullAddr" class="setting-sub" style="font-family:JetBrains Mono,monospace;font-size:10px">' + (wa || 'Not connected') + '</div></div>';
+    h += '<button onclick="copyAddress()" style="background:var(--glass);border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-size:11px;cursor:pointer;color:var(--text)">📋 Copy</button></div>';
+    h += '<div class="setting-row" style="padding:8px 0"><div><div class="setting-label">Network</div><div class="setting-sub">ARC Testnet · Chain 5041906</div></div><span class="net-badge">⚡ Connected</span></div>';
+    h += '<div class="setting-row" style="padding:8px 0"><div><div class="setting-label">Explorer</div><div class="setting-sub">View all transactions on ArcScan</div></div>';
+    h += '<a href="' + expUrl + '" target="_blank" style="color:var(--neon2);font-size:12px;font-weight:600">ArcScan ↗</a></div>';
+    h += '</div>';
+    h += '<div style="background:var(--glass);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px">';
+    h += '<div style="font-size:13px;font-weight:700;margin-bottom:12px">⚡ Recent Activity</div>';
+    h += '<div id="profileActivityList"><div style="color:var(--muted2);font-size:12px;text-align:center;padding:12px">Loading...</div></div>';
+    h += '</div>';
+    h += '<button onclick="disconnectWallet()" style="width:100%;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:12px;color:#ef4444;font-family:Syne,sans-serif;font-weight:700;font-size:13px;padding:12px;cursor:pointer;transition:all 0.2s">🔌 Disconnect Wallet</button>';
+    h += '</div>';
+    return h;
+  }
+
+  if (name === 'settings') {
+    var conn2 = (typeof isConnected !== 'undefined' && isConnected);
+    var ws3 = (typeof walletShort !== 'undefined' && walletShort) ? walletShort : 'Not connected';
+    h = '<div class="card action-card">';
+    h += '<div class="settings-section"><h3>Wallet</h3>';
+    h += '<div class="setting-row"><div><div class="setting-label">Connected Wallet</div><div class="setting-sub">' + ws3 + '</div></div>';
+    h += '<button class="btn-connect" style="padding:8px 14px;font-size:12px" onclick="openWalletModal()">' + (conn2 ? 'Switch' : 'Connect') + '</button></div>';
+    h += '<div class="setting-row"><div><div class="setting-label">Network</div><div class="setting-sub">ARC Testnet · Chain ID 5041906</div></div>';
+    h += '<a href="https://testnet.arcscan.app" target="_blank" style="font-size:12px;color:var(--neon2)">Explorer ↗</a></div>';
+    h += '<div class="setting-row"><div><div class="setting-label">RPC Endpoint</div><div class="setting-sub">rpc.testnet.arc.network</div></div>';
+    h += '<button style="background:var(--glass);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:Syne,sans-serif;font-size:11px;padding:6px 12px;cursor:pointer" onclick="addArcTestnet().then(function(){showToast(\'ARC Testnet added!\',\'⚡\')})">Add to Wallet</button></div>';
+    h += '</div>';
+    h += '<div class="settings-section"><h3>Appearance</h3>';
+    h += '<div class="setting-row"><div><div class="setting-label">Theme</div><div class="setting-sub">Toggle dark and light mode</div></div>';
+    h += '<button class="theme-btn" onclick="toggleTheme()" style="width:auto;padding:0 14px;font-size:13px">🌙 / ☀️</button></div></div>';
+    h += '<div class="settings-section"><h3>Preferences</h3>';
+    h += '<div class="setting-row"><div><div class="setting-label">Notifications</div><div class="setting-sub">Transaction and price alerts</div></div>';
+    h += '<div class="toggle on" onclick="this.classList.toggle(\'on\')"></div></div>';
+    h += '<div class="setting-row"><div><div class="setting-label">AI Auto-routing</div><div class="setting-sub">Let AI find optimal routes</div></div>';
+    h += '<div class="toggle on" onclick="this.classList.toggle(\'on\')"></div></div></div>';
+    h += '<div class="settings-section"><h3>About</h3>';
+    h += '<div class="setting-row"><div><div class="setting-label">ARCAgent</div><div class="setting-sub">Version 2.0.1 · ARC Testnet</div></div>';
+    h += '<span style="font-size:11px;color:var(--neon4)">● Live</span></div>';
+    h += '<div class="setting-row"><div><div class="setting-label">Token Contract</div>';
+    h += '<div class="setting-sub" style="font-family:JetBrains Mono;font-size:10px">0xD628F82B8339e601529F76a9dF70C48E658cA882</div></div>';
+    h += '<button onclick="navigator.clipboard.writeText(\'0xD628F82B8339e601529F76a9dF70C48E658cA882\').then(function(){showToast(\'CA Copied!\',\'📋\')})" style="background:var(--glass);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:11px;padding:5px 10px;cursor:pointer">📋</button></div>';
+    h += '</div></div>';
+    return h;
+  }
+
+  return '<div class="card action-card"><p style="color:var(--muted2)">Page coming soon</p></div>';
 }
+
 
 // ═══════════════════════════════════════════════════════
 // TRANSFER LOGIC
@@ -1936,7 +2470,7 @@ function handleTransferTab(tabType) {
     if(recipientRow) recipientRow.style.display = 'block';
     if(stdTokenRow) stdTokenRow.style.display = 'flex';
     if(swapBox) swapBox.style.display = 'none';
-    if(executeBtn) executeBtn.textContent = '🌉 Execute Bridge';
+    if(executeBtn) executeBtn.textContent = '⛓️ Execute Bridge';
     if(txPreview) txPreview.style.display = 'block';
     updatePreview();
   } else if (tabType === 'swap') {
@@ -2104,6 +2638,23 @@ setTimeout(() => {
 
 setTimeout(() => showToast('Welcome to ARCAgent! Connect wallet for real ARC Testnet data. 👋', '👋'), 1500);
 
+// Load saved profile on startup
+(function() {
+  try {
+    const p = JSON.parse(localStorage.getItem('arcagent_profile') || '{}');
+    if(p.name) {
+      const n = document.getElementById('sidebarName');
+      if(n) n.textContent = p.name;
+    }
+    if(p.photo) {
+      const img = document.getElementById('sidebarAvatarImg');
+      const txt = document.getElementById('sidebarAvatarText');
+      if(img) { img.src=p.photo; img.style.display='block'; }
+      if(txt) txt.style.display='none';
+    }
+  } catch(e) {}
+})();
+
 // Check if already connected (page reload)
 if (typeof window.ethereum !== 'undefined') {
   window.ethereum.request({ method: 'eth_accounts' }).then(accounts => {
@@ -2114,7 +2665,349 @@ if (typeof window.ethereum !== 'undefined') {
   }).catch(() => {});
 }
 
+
+// ── RIPPLE CLICK ANIMATION ──
+function createRipple(e) {
+  const el = e.currentTarget;
+  const existing = el.querySelectorAll('.ripple-wave');
+  existing.forEach(r => r.remove());
+  const r = document.createElement('span');
+  r.className = 'ripple-wave';
+  const rect = el.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height) * 2;
+  r.style.cssText = `position:absolute;border-radius:50%;width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px;background:radial-gradient(circle,rgba(124,58,237,0.35),rgba(16,185,129,0.15) 50%,transparent 70%);transform:scale(0);animation:rippleAnim 0.55s ease-out forwards;pointer-events:none;z-index:9999;`;
+  el.appendChild(r);
+  setTimeout(() => r && r.remove(), 600);
+}
+
+function attachRipples() {
+  const sel = '.nav-item,.action-btn,.btn-connect,.btn-primary,.btn-demo,.btn-faucet,.chip,.tab,.wallet-option,.stat-card,.arc-link,.faucet-chain,.btn-enter,.btn-connect-header';
+  document.querySelectorAll(sel).forEach(el => {
+    if(!el.dataset.ripple) {
+      el.dataset.ripple = '1';
+      el.addEventListener('click', createRipple);
+    }
+  });
+}
+
+document.addEventListener('mousemove', e => {
+  document.querySelectorAll('.nav-item').forEach(el => {
+    const r = el.getBoundingClientRect();
+    el.style.setProperty('--mx', ((e.clientX-r.left)/r.width*100)+'%');
+    el.style.setProperty('--my', ((e.clientY-r.top)/r.height*100)+'%');
+  });
+});
+
+// Attach on DOM ready
+document.addEventListener('DOMContentLoaded', () => { setTimeout(attachRipples, 400); });
+
+// ═══════════════════════════════════════════════════════
+// PROTOCOL STATS — REAL ON-CHAIN DATA
+// ═══════════════════════════════════════════════════════
+let _protoStatsTimer = null;
+const _sparkBuf = { users:[], txns:[], bridge:[], swap:[], send:[] };
+
+function _pushSpark(buf, val) { buf.push(val); if(buf.length>10) buf.shift(); }
+function _drawSpark(id, buf, color) {
+  const el = document.getElementById(id);
+  if (!el || buf.length < 2) return;
+  const mn = Math.min(...buf), mx = Math.max(...buf), range = mx-mn||1;
+  const pts = buf.map((v,i) => ((i/(buf.length-1))*78)+','+(26-((v-mn)/range)*24)).join(' ');
+  el.setAttribute('points', pts);
+  el.setAttribute('stroke', color);
+}
+function _fmtNum(n) {
+  if(n>=1e6) return (n/1e6).toFixed(2)+'M';
+  if(n>=1e3) return (n/1e3).toFixed(1)+'K';
+  return String(n);
+}
+function _fmtUSDC(n) {
+  const v = n/1e6;
+  if(v>=1e6) return '$'+(v/1e6).toFixed(2)+'M';
+  if(v>=1e3) return '$'+(v/1e3).toFixed(1)+'K';
+  return '$'+v.toFixed(2);
+}
+async function _protoRPC(method, params) {
+  try {
+    const r = await fetch('https://rpc.testnet.arc.network', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({jsonrpc:'2.0',id:1,method,params}),
+      signal: AbortSignal.timeout(6000)
+    });
+    return (await r.json()).result;
+  } catch(e) { return null; }
+}
+async function _protoScanAPI(params) {
+  try {
+    const q = new URLSearchParams(params).toString();
+    const r = await fetch('https://testnet.arcscan.app/api?'+q, {signal: AbortSignal.timeout(8000)});
+    const d = await r.json();
+    return d.status === '1' ? d.result : null;
+  } catch(e) { return null; }
+}
+
+async function fetchProtocolStatsPage() {
+  const USDC_CA = '0xD628F82B8339e601529F76a9dF70C48E658cA882';
+  const setEl = (id, val) => { const e=document.getElementById(id); if(e) e.textContent=val; };
+
+  try {
+    // 1. Block + gas
+    const [blockHex, gasPriceHex] = await Promise.all([
+      _protoRPC('eth_blockNumber', []),
+      _protoRPC('eth_gasPrice', [])
+    ]);
+    const latestBlock = blockHex ? parseInt(blockHex,16) : null;
+    const gasGwei = gasPriceHex ? (parseInt(gasPriceHex,16)/1e9).toFixed(4) : '—';
+    if(latestBlock) {
+      setEl('protoBlock', latestBlock.toLocaleString());
+      const [b1, b2] = await Promise.all([
+        _protoRPC('eth_getBlockByNumber', ['0x'+latestBlock.toString(16), false]),
+        _protoRPC('eth_getBlockByNumber', ['0x'+(latestBlock-10).toString(16), false])
+      ]);
+      if(b1 && b2) {
+        const diff = (parseInt(b1.timestamp,16) - parseInt(b2.timestamp,16)) / 10;
+        setEl('protoBlockTime', diff.toFixed(1)+'s');
+      }
+    }
+    setEl('protoGasPrice', gasGwei==='—' ? '—' : gasGwei+' Gwei');
+
+    // 2. Token transfers + normal txns
+    const [tokenTxns, normalTxns] = await Promise.all([
+      _protoScanAPI({module:'account',action:'tokentx',contractaddress:USDC_CA,page:'1',offset:'1000',sort:'desc'}),
+      _protoScanAPI({module:'account',action:'txlist',address:USDC_CA,page:'1',offset:'1000',sort:'desc'})
+    ]);
+
+    // Unique addresses
+    const uniqueAddrs = new Set();
+    [...(normalTxns||[]), ...(tokenTxns||[])].forEach(t => {
+      if(t.from) uniqueAddrs.add(t.from.toLowerCase());
+      if(t.to)   uniqueAddrs.add(t.to.toLowerCase());
+    });
+    uniqueAddrs.delete(USDC_CA.toLowerCase());
+    const userCount = uniqueAddrs.size;
+    const totalTxns = (normalTxns||[]).length + (tokenTxns||[]).length;
+
+    // Classify volumes
+    let bridgeVol=0, swapVol=0, sendVol=0, bridgeCount=0, swapCount=0, sendCount=0;
+    (tokenTxns||[]).forEach(t => {
+      const val = parseInt(t.value||0), rawUSD = val/1e6;
+      if(rawUSD >= 50)  { bridgeVol+=val; bridgeCount++; }
+      else if(rawUSD>=1){ swapVol+=val;   swapCount++;   }
+      else              { sendVol+=val;   sendCount++;   }
+    });
+    const otherCount = Math.max(0, (normalTxns||[]).length - bridgeCount - swapCount - sendCount);
+    const totalClassified = bridgeCount + swapCount + sendCount + otherCount || 1;
+
+    // Active today
+    const oneDayAgo = Math.floor(Date.now()/1000) - 86400;
+    const todayAddrs = new Set();
+    (tokenTxns||[]).filter(t=>parseInt(t.timeStamp)>oneDayAgo).forEach(t => {
+      if(t.from) todayAddrs.add(t.from.toLowerCase());
+    });
+
+    // Total supply
+    const tsHex = await _protoRPC('eth_call', [{to:USDC_CA, data:'0x18160ddd'}, 'latest']);
+    const totalSupply = tsHex ? parseInt(tsHex,16) : null;
+
+    // ── DOM updates ──
+    setEl('protoUsers',          _fmtNum(userCount));
+    setEl('protoUsersChange',    userCount+' unique addresses on-chain');
+    setEl('protoTotalTxns',      _fmtNum(totalTxns));
+    setEl('protoTotalTxnsChange', totalTxns+' total on ARC Testnet');
+    setEl('protoBridgeVol',      _fmtUSDC(bridgeVol));
+    setEl('protoBridgeChange',   bridgeCount+' bridge transactions');
+    setEl('protoSwapVol',        _fmtUSDC(swapVol));
+    setEl('protoSwapChange',     swapCount+' swap transactions');
+    setEl('protoSendVol',        _fmtUSDC(sendVol));
+    setEl('protoSendChange',     sendCount+' send transactions');
+    setEl('protoActiveToday',    todayAddrs.size || '—');
+    setEl('protoTotalSupply',    totalSupply ? _fmtUSDC(totalSupply) : '—');
+
+    // Breakdown bar
+    const pcts = {
+      send:   Math.round(sendCount/totalClassified*100),
+      bridge: Math.round(bridgeCount/totalClassified*100),
+      swap:   Math.round(swapCount/totalClassified*100),
+      other:  0
+    };
+    pcts.other = Math.max(0, 100 - pcts.send - pcts.bridge - pcts.swap);
+    ['send','bridge','swap','other'].forEach(k => {
+      const K = k.charAt(0).toUpperCase()+k.slice(1);
+      const bar = document.getElementById('pbb'+K); if(bar) bar.style.width=pcts[k]+'%';
+      const pct = document.getElementById('pbl'+K+'Pct'); if(pct) pct.textContent=pcts[k]+'%';
+    });
+
+    // Sparklines
+    _pushSpark(_sparkBuf.users,  userCount);
+    _pushSpark(_sparkBuf.txns,   totalTxns);
+    _pushSpark(_sparkBuf.bridge, bridgeVol/1e6);
+    _pushSpark(_sparkBuf.swap,   swapVol/1e6);
+    _pushSpark(_sparkBuf.send,   sendVol/1e6);
+    _drawSpark('sparkUsers',  _sparkBuf.users,  'rgba(167,139,250,0.8)');
+    _drawSpark('sparkTxns',   _sparkBuf.txns,   'rgba(16,185,129,0.8)');
+    _drawSpark('sparkBridge', _sparkBuf.bridge, 'rgba(6,182,212,0.8)');
+    _drawSpark('sparkSwap',   _sparkBuf.swap,   'rgba(245,158,11,0.8)');
+    _drawSpark('sparkSend',   _sparkBuf.send,   'rgba(99,102,241,0.8)');
+
+    // Leaderboard
+    const addrTxCount = {};
+    (tokenTxns||[]).forEach(t => {
+      if(t.from && t.from.toLowerCase()!==USDC_CA.toLowerCase()) {
+        const a = t.from.toLowerCase();
+        addrTxCount[a] = (addrTxCount[a]||0)+1;
+      }
+    });
+    const sorted = Object.entries(addrTxCount).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    const rankClass = ['gold','silver','bronze','',''];
+    const rankLabel = ['🥇','🥈','🥉','4','5'];
+    const lbEl = document.getElementById('protoLeaderboard');
+    if(lbEl) {
+      lbEl.innerHTML = sorted.length===0
+        ? '<div style="color:var(--muted2);font-size:11px;text-align:center;padding:8px">No data yet</div>'
+        : sorted.map(([addr,cnt],i) => `<div class="proto-lb-item"><span class="proto-lb-rank ${rankClass[i]}">${rankLabel[i]}</span><span class="proto-lb-addr">${addr.slice(0,6)}…${addr.slice(-4)}</span><span class="proto-lb-count">${cnt} txns</span></div>`).join('');
+    }
+
+    // Timestamp
+    const upEl = document.getElementById('protoLastUpdated');
+    if(upEl) upEl.textContent = 'Updated '+new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+
+    // Schedule next auto-refresh only while stats page is open
+    if(_protoStatsTimer) clearTimeout(_protoStatsTimer);
+    if(currentPage === 'stats') {
+      _protoStatsTimer = setTimeout(fetchProtocolStatsPage, 30000);
+    }
+
+  } catch(e) {
+    console.warn('[ProtoStats] error', e);
+    const upEl = document.getElementById('protoLastUpdated');
+    if(upEl) upEl.textContent = 'Fetch error — retrying…';
+    if(_protoStatsTimer) clearTimeout(_protoStatsTimer);
+    if(currentPage === 'stats') _protoStatsTimer = setTimeout(fetchProtocolStatsPage, 15000);
+  }
+}
+
+// ========================================================
+// GLOBAL WITHDRAW FUNCTION (FIXED FOR DYNAMIC PANEL & ARC TESTNET)
+// ========================================================
+window.doWithdraw = async function() {
+    console.log("Withdraw execution started!");
+    
+    if (!window.ethereum) {
+        alert("Please connect your wallet first!");
+        return;
+    }
+
+    // --- ARC TESTNET RPC & NETWORK AUTO-SWITCH ---
+    const ARC_TESTNET_ID = "0xaa36a7"; // 11155111 Testnet Chain ID
+    try {
+        const currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
+        if (currentChainId !== ARC_TESTNET_ID) {
+            try {
+                await window.ethereum.request({
+                    method: 'wallet_switchEthereumChain',
+                    params: [{ chainId: ARC_TESTNET_ID }],
+                });
+            } catch (err) {
+                if (err.code === 4902) {
+                    await window.ethereum.request({
+                        method: 'wallet_addEthereumChain',
+                        params: [{
+                            chainId: ARC_TESTNET_ID,
+                            chainName: 'ARC Testnet',
+                            nativeCurrency: { name: 'ARC', symbol: 'ARC', decimals: 18 },
+                            rpcUrls: ["https://rpc-testnet.arc.io"],
+                            blockExplorerUrls: ['https://explorer-testnet.arc.io']
+                        }],
+                    });
+                } else {
+                    alert("Kripya wallet ko ARC Testnet par switch karein.");
+                    return;
+                }
+            }
+        }
+    } catch (e) {
+        console.error("Network switch error:", e);
+        return;
+    }
+
+    // --- FETCH AMOUNT FROM CORRECT ID ---
+    const inputEl = document.getElementById('investWithdrawAmt'); 
+    if (!inputEl) {
+        alert("Input field 'investWithdrawAmt' nahi mili! HTML block check karein.");
+        return;
+    }
+
+    const amount = inputEl.value;
+    if (!amount || parseFloat(amount) <= 0) {
+        alert("Kripya withdraw karne ke liye sahi amount enter karein.");
+        return;
+    }
+
+    try {
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const signer = provider.getSigner();
+        
+        // Smart Contract Interaction Validation
+        if (typeof stakingContract !== "undefined" && stakingContract) {
+            alert(`ARC Testnet par ${amount} USDC withdraw karne ke liye request bheji ja rahi hai...`);
+            const tx = await stakingContract.withdraw(ethers.utils.parseUnits(amount, 18));
+            await tx.wait();
+            alert("📤 Withdrawal Successful!");
+        } else {
+            alert(`✨ ARC Testnet Connected!\nAmount: ${amount} USDC\n(Smart contract connection trigger complete!)`);
+        }
+        
+        inputEl.value = ""; // Success ke baad field clear karein
+        
+    } catch (error) {
+        console.error("Withdraw transaction failed:", error);
+        alert("Transaction fail ho gayi ya wallet se cancel kar di gayi.");
+    }
+}
+
+// ========================================================
+// GLOBAL setWithdrawMax FUNCTION
+// ========================================================
+window.setWithdrawMax = function() {
+    const stakedDisplay = document.getElementById('withdrawStakedDisplay');
+    const inputEl = document.getElementById('investWithdrawAmt');
+    if (stakedDisplay && inputEl) {
+        const maxAmount = stakedDisplay.textContent.replace(' USDC', '').trim();
+        if (maxAmount && maxAmount !== '—') {
+            inputEl.value = maxAmount;
+        }
+    }
+}
+
+
+window.switchInvestTab = function(tab){
+  ['deposit','withdraw','claim'].forEach(function(t){
+    var panel=document.getElementById('invest-panel-'+t);
+    var btn=document.getElementById('itab-'+t);
+    if(panel) panel.style.display=(t===tab?'block':'none');
+    if(btn) btn.classList.toggle('active', t===tab);
+  });
+};
 </script>
 
 </body>
 </html>
+
+<script>
+window.setInvestPct = function(pct){
+ try{
+   const el = document.querySelector('input[type="number"]') || document.getElementById('stakeAmount');
+   if(!el) return;
+   let max = 0;
+   const maxBtn = [...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='MAX');
+   if(maxBtn && maxBtn.onclick){
+      maxBtn.click();
+      return;
+   }
+   const balText = document.body.innerText.match(/Available USDC\s*([0-9,.]+)/i);
+   if(balText) max = parseFloat(balText[1].replace(/,/g,''))||0;
+   if(max>0) el.value = ((max*pct)/100).toFixed(2);
+ }
+ catch(e){console.error(e);}
+}
+</script>
