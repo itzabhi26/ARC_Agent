@@ -734,7 +734,7 @@ body::after{
   <div class="side-item">VER&nbsp;&nbsp;<span class="si-val">2.0.1</span></div>
 </div>
 <div class="side-right">
-  <div class="side-item"><span class="si-val">5041906</span>&nbsp;CHAIN</div>
+  <div class="side-item"><span class="si-val">5042002</span>&nbsp;CHAIN</div>
   <div class="side-item"><span class="si-val">USDC</span>&nbsp;GAS</div>
   <div class="side-item"><span class="si-val" id="sideBlock">—</span>&nbsp;BLK</div>
   <div class="side-item"><span class="si-val">L1</span>&nbsp;EVM</div>
@@ -772,7 +772,7 @@ body::after{
   </div>
 
   <div class="headline">
-    <div class="headline-pre">Protocol <span>v2.0</span> &nbsp;·&nbsp; ARC Testnet &nbsp;·&nbsp; Chain 5041906</div>
+    <div class="headline-pre">Protocol <span>v2.0</span> &nbsp;·&nbsp; ARC Testnet &nbsp;·&nbsp; Chain 5042002</div>
     <span class="headline-main">WELCOME TO</span>
     <span class="headline-name">ARCAGENT<span class="headline-dot">.</span></span>
   </div>
@@ -1028,7 +1028,7 @@ body::after{
         <div class="card network-card fade-in">
           <div class="section-title" style="margin-bottom:8px">Network Status</div>
           <div class="network-item"><div class="net-dot green"></div><div class="net-name">ARC Testnet</div><div class="net-ping" id="arcPing">—</div></div>
-          <div class="network-item"><div class="net-dot green"></div><div class="net-name">Chain ID: 5041906</div><div class="net-ping">EVM</div></div>
+          <div class="network-item"><div class="net-dot green"></div><div class="net-name">Chain ID: 5042002</div><div class="net-ping">EVM</div></div>
           <div class="network-item"><div class="net-dot green"></div><div class="net-name">Base Sepolia</div><div class="net-ping">—</div></div>
           <div class="network-item"><div class="net-dot yellow"></div><div class="net-name">Block Explorer</div><div><a href="https://testnet.arcscan.app" target="_blank" style="color:var(--neon2);font-size:11px;font-family:'JetBrains Mono'">arcscan ↗</a></div></div>
         
@@ -1097,7 +1097,7 @@ body::after{
       <h3>Connect Wallet</h3>
       <div class="modal-close" onclick="closeModal()">✕</div>
     </div>
-    <p style="font-size:12px;color:var(--muted2);margin-bottom:16px">Connecting will add ARC Testnet (Chain ID: 5041906) to your wallet automatically.</p>
+    <p style="font-size:12px;color:var(--muted2);margin-bottom:16px">Connecting will add ARC Testnet (Chain ID: 5042002) to your wallet automatically.</p>
     <div class="wallet-option" onclick="connectMetaMask()">
       <div class="wallet-option-icon">🦊</div>
       <div><div class="wallet-option-name">MetaMask</div><div class="wallet-option-sub">Connect using browser extension · Adds ARC Testnet</div></div>
@@ -1198,7 +1198,7 @@ draw();
 
 // TICKER
 const tickerData = [
-  {label:'ARC Testnet',value:'ONLINE',hi:true},{label:'Chain ID',value:'5041906'},
+  {label:'ARC Testnet',value:'ONLINE',hi:true},{label:'Chain ID',value:'5042002'},
   {label:'Gas Token',value:'USDC'},{label:'Finality',value:'<1s'},
   {label:'AI Status',value:'ACTIVE',hi:true},{label:'EVM Compat',value:'100%'},
   {label:'Protocol',value:'ARCAgent v2'},{label:'Network',value:'rpc.testnet.arc.network'},
@@ -1308,9 +1308,13 @@ function initMainApp() {
 // ARC TESTNET CONFIG
 // ═══════════════════════════════════════════════════════
 const ARC_TESTNET = {
-  chainId: '0x4CD252', // 5041906 in hex — verified ARC Testnet chain ID
-  chainName: 'ARC Testnet',
-  nativeCurrency: { name: 'USDC', symbol: 'USDC', decimals: 6 },
+  chainId: '0x4CF49A', // 5042002
+  chainName: 'Arc Testnet',
+  nativeCurrency: {
+    name: 'USDC',
+    symbol: 'USDC',
+    decimals: 6
+  },
   rpcUrls: ['https://rpc.testnet.arc.network'],
   blockExplorerUrls: ['https://testnet.arcscan.app']
 };
@@ -1694,7 +1698,7 @@ function updateWalletOverview(usdcBalance, address) {
     </div>
     <div class="wallet-item">
       <div class="chain-icon" style="background:rgba(124,58,237,0.15)">⚡</div>
-      <div><div class="chain-name">ARC Chain</div><div class="chain-sub">Chain ID: 5041906</div></div>
+      <div><div class="chain-name">ARC Chain</div><div class="chain-sub">Chain ID: Chain 5042002</div></div>
       <div class="chain-bal"><div class="chain-usd" style="font-size:11px;color:var(--neon4)">Connected</div><div class="chain-token">EVM</div></div>
     </div>
     <div class="wallet-item">
@@ -2250,7 +2254,7 @@ h += '</div>';
     h += '<div class="faucet-info-card"><div class="icon">🔒</div><h4>Requirements</h4><p>Valid EVM address. No KYC needed.</p></div>';
     h += '</div>';
     h += '<div class="card action-card" style="margin-top:0"><div class="section-title">Supported Testnets</div>';
-    h += '<div class="network-item"><div class="net-dot green"></div><div class="net-name">ARC Testnet</div><div style="font-size:12px;color:var(--muted2)">USDC native · 1 USDC/day · Chain 5041906</div></div>';
+    h += '<div class="network-item"><div class="net-dot green"></div><div class="net-name">ARC Testnet</div><div style="font-size:12px;color:var(--muted2)">USDC native · 1 USDC/day · Chain Chain 5042002</div></div>';
     h += '<div class="network-item"><div class="net-dot green"></div><div class="net-name">Base Sepolia</div><div style="font-size:12px;color:var(--muted2)">ETH + USDC · Circle Faucet</div></div>';
     h += '<div class="network-item"><div class="net-dot yellow"></div><div class="net-name">Ethereum Sepolia</div><div style="font-size:12px;color:var(--muted2)">ETH · 0.05 ETH/day</div></div>';
     h += '</div>';
@@ -2395,7 +2399,7 @@ h += '</div>';
     h += '<div style="font-size:13px;font-weight:700;margin-bottom:12px">🔗 Wallet Details</div>';
     h += '<div class="setting-row" style="padding:8px 0"><div><div class="setting-label">Address</div><div id="profileFullAddr" class="setting-sub" style="font-family:JetBrains Mono,monospace;font-size:10px">' + (wa || 'Not connected') + '</div></div>';
     h += '<button onclick="copyAddress()" style="background:var(--glass);border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-size:11px;cursor:pointer;color:var(--text)">📋 Copy</button></div>';
-    h += '<div class="setting-row" style="padding:8px 0"><div><div class="setting-label">Network</div><div class="setting-sub">ARC Testnet · Chain 5041906</div></div><span class="net-badge">⚡ Connected</span></div>';
+    h += '<div class="setting-row" style="padding:8px 0"><div><div class="setting-label">Network</div><div class="setting-sub">ARC Testnet · Chain Chain 5042002</div></div><span class="net-badge">⚡ Connected</span></div>';
     h += '<div class="setting-row" style="padding:8px 0"><div><div class="setting-label">Explorer</div><div class="setting-sub">View all transactions on ArcScan</div></div>';
     h += '<a href="' + expUrl + '" target="_blank" style="color:var(--neon2);font-size:12px;font-weight:600">ArcScan ↗</a></div>';
     h += '</div>';
@@ -2415,7 +2419,7 @@ h += '</div>';
     h += '<div class="settings-section"><h3>Wallet</h3>';
     h += '<div class="setting-row"><div><div class="setting-label">Connected Wallet</div><div class="setting-sub">' + ws3 + '</div></div>';
     h += '<button class="btn-connect" style="padding:8px 14px;font-size:12px" onclick="openWalletModal()">' + (conn2 ? 'Switch' : 'Connect') + '</button></div>';
-    h += '<div class="setting-row"><div><div class="setting-label">Network</div><div class="setting-sub">ARC Testnet · Chain ID 5041906</div></div>';
+    h += '<div class="setting-row"><div><div class="setting-label">Network</div><div class="setting-sub">ARC Testnet · Chain ID Chain 5042002</div></div>';
     h += '<a href="https://testnet.arcscan.app" target="_blank" style="font-size:12px;color:var(--neon2)">Explorer ↗</a></div>';
     h += '<div class="setting-row"><div><div class="setting-label">RPC Endpoint</div><div class="setting-sub">rpc.testnet.arc.network</div></div>';
     h += '<button style="background:var(--glass);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:Syne,sans-serif;font-size:11px;padding:6px 12px;cursor:pointer" onclick="addArcTestnet().then(function(){showToast(\'ARC Testnet added!\',\'⚡\')})">Add to Wallet</button></div>';
@@ -2898,7 +2902,7 @@ window.doWithdraw = async function() {
     }
 
     // --- ARC TESTNET RPC & NETWORK AUTO-SWITCH ---
-    const ARC_TESTNET_ID = "0xaa36a7"; // 11155111 Testnet Chain ID
+    const ARC_TESTNET_ID = ARC_TESTNET.chainId; // ARC Testnet Chain ID
     try {
         const currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
         if (currentChainId !== ARC_TESTNET_ID) {
