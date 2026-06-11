@@ -1316,7 +1316,7 @@ const ARC_TESTNET = {
   blockExplorerUrls: ['https://testnet.arcscan.app']
 };
 // USDC contract on ARC Testnet (native gas token, also ERC-20 compatible)
-const USDC_ARC = '0xD628F82B8339e601529F76a9dF70C48E658cA882'; // ARCAgent token CA on ARC Testnet
+const USDC_ARC = '0x3600000000000000000000000000000000000000'; // ARCAgent token CA on ARC Testnet
 
 // ═══════════════════════════════════════════════════════
 // STATE
@@ -1434,6 +1434,7 @@ function onWalletConnected(address, walletName) {
   
   // Fetch real data
   fetchAllRealData();
+  fetchUSDCBalance();
   
   // Listen for account changes
   if (window.ethereum) {
@@ -2580,7 +2581,7 @@ async function executeTransfer() {
       'function decimals() view returns (uint8)'
     ];
     const usdc     = new ethers.Contract(USDC_ARC, ERC20_ABI, signer);
-    const decimals = 6; // USDC = 6 decimals
+    const decimals = 18; // ARC Testnet native USDC = 18 decimals
     const amtParsed = ethers.utils.parseUnits(amount, decimals);
 
     showToast('Transaction bheja ja raha hai... ⏳', '⏳');
@@ -2604,6 +2605,46 @@ async function executeTransfer() {
     } else {
       showToast('Transfer failed: ' + (err.reason || err.message || 'Unknown error') + ' ❌', '❌');
     }
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// USDC BALANCE FETCH (ARC Native)
+// ═══════════════════════════════════════════════════════
+async function fetchUSDCBalance() {
+  if (!isConnected || !walletAddress) return;
+  try {
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    // Method 1: eth_getBalance (native USDC on ARC)
+    const balWei = await provider.getBalance(walletAddress);
+    const balUSDC = parseFloat(ethers.utils.formatUnits(balWei, 18)).toFixed(4);
+    window.usdcBalance = balUSDC;
+    window.walletBalance = balUSDC;
+
+    // Update all balance display elements
+    const ids = ['usdcBalance','walletBalance','usdcBal','balanceDisplay',
+                 'portUsdc','investBalance','sideUSDC','headerBalance'];
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = balUSDC + ' USDC';
+    });
+
+    // Also try ERC-20 balanceOf as backup
+    const ERC20_ABI = ['function balanceOf(address) view returns (uint256)'];
+    const usdc = new ethers.Contract(USDC_ARC, ERC20_ABI, provider);
+    const ercBal = await usdc.balanceOf(walletAddress);
+    const ercBalFmt = parseFloat(ethers.utils.formatUnits(ercBal, 18)).toFixed(4);
+    if (parseFloat(ercBalFmt) > 0) {
+      window.usdcBalance = ercBalFmt;
+      window.walletBalance = ercBalFmt;
+      ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = ercBalFmt + ' USDC';
+      });
+    }
+    console.log('USDC Balance fetched:', balUSDC, '(native)', ercBalFmt, '(ERC20)');
+  } catch(e) {
+    console.warn('Balance fetch error:', e.message);
   }
 }
 
