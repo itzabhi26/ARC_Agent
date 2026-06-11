@@ -2530,13 +2530,80 @@ async function updateSwapPreview() {
   }
 }
 
-function executeTransfer() {
-  if (!isConnected && !demoMode) { openWalletModal(); return; }
-  showToast('Transaction submitted to ARC Testnet! 🚀', '🚀');
-  setTimeout(() => {
-    showToast('Transfer confirmed ✅ View on ArcScan', '✅');
-    if (isConnected && !demoMode) fetchAllRealData();
-  }, 3000);
+async function executeTransfer() {
+  if (!isConnected || demoMode) { openWalletModal(); return; }
+
+  const amountEl   = document.getElementById('amountInput');
+  const recipEl    = document.getElementById('recipientInput');
+  const amount     = amountEl  ? amountEl.value.trim()  : '';
+  const recipient  = recipEl   ? recipEl.value.trim()   : '';
+
+  // ── Validation ──
+  if (!amount || parseFloat(amount) <= 0) {
+    showToast('Kripya valid amount enter karein ⚠️', '⚠️'); return;
+  }
+  if (!recipient || !recipient.startsWith('0x') || recipient.length !== 42) {
+    showToast('Kripya valid recipient address enter karein ⚠️', '⚠️'); return;
+  }
+
+  // ── Chain switch to ARC Testnet ──
+  const ARC_ID = '0x4cef52';
+  try {
+    const currentChain = await window.ethereum.request({ method: 'eth_chainId' });
+    if (currentChain !== ARC_ID) {
+      try {
+        await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: ARC_ID }] });
+      } catch (switchErr) {
+        if (switchErr.code === 4902) {
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [{ chainId: ARC_ID, chainName: 'ARC Testnet',
+              nativeCurrency: { name: 'USDC', symbol: 'USDC', decimals: 18 },
+              rpcUrls: ['https://rpc.testnet.arc.network'],
+              blockExplorerUrls: ['https://testnet.arcscan.app'] }]
+          });
+        } else { showToast('Network switch cancelled ❌', '❌'); return; }
+      }
+    }
+  } catch(e) { showToast('Network error: ' + (e.message || e), '❌'); return; }
+
+  showToast('Wallet mein approve karein... 🦊', '🦊');
+
+  try {
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const signer   = provider.getSigner();
+
+    // ── ERC-20 USDC transfer ABI ──
+    const ERC20_ABI = [
+      'function transfer(address to, uint256 amount) returns (bool)',
+      'function decimals() view returns (uint8)'
+    ];
+    const usdc     = new ethers.Contract(USDC_ARC, ERC20_ABI, signer);
+    const decimals = 6; // USDC = 6 decimals
+    const amtParsed = ethers.utils.parseUnits(amount, decimals);
+
+    showToast('Transaction bheja ja raha hai... ⏳', '⏳');
+    const tx = await usdc.transfer(recipient, amtParsed);
+    showToast('Transaction submitted! Hash: ' + tx.hash.slice(0,10) + '... 🚀', '🚀');
+
+    const receipt = await tx.wait();
+    showToast('✅ Transfer confirmed! Block: ' + receipt.blockNumber, '✅');
+
+    // Open explorer
+    setTimeout(() => {
+      window.open('https://testnet.arcscan.app/tx/' + tx.hash, '_blank');
+    }, 1000);
+
+    fetchAllRealData();
+
+  } catch (err) {
+    console.error('Transfer failed:', err);
+    if (err.code === 4001) {
+      showToast('Transaction cancel kar di ❌', '❌');
+    } else {
+      showToast('Transfer failed: ' + (err.reason || err.message || 'Unknown error') + ' ❌', '❌');
+    }
+  }
 }
 
 // ═══════════════════════════════════════════════════════
