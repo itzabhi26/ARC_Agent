@@ -2575,23 +2575,25 @@ async function executeTransfer() {
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     const signer   = provider.getSigner();
 
-    // ── ERC-20 USDC transfer ABI ──
-    const ERC20_ABI = [
-      'function transfer(address to, uint256 amount) returns (bool)',
-      'function decimals() view returns (uint8)'
-    ];
-    const usdc     = new ethers.Contract(USDC_ARC, ERC20_ABI, signer);
-    const decimals = 18; // ARC Testnet native USDC = 18 decimals
-    const amtParsed = ethers.utils.parseUnits(amount, decimals);
+    // ── ARC pe USDC native token hai — ETH send ki tarah bhejte hain ──
+    // ERC20 transfer() kaam nahi karta kyunki USDC = native gas token on ARC
+    const amtParsed = ethers.utils.parseUnits(amount, 18); // 18 decimals native
 
     showToast('Transaction bheja ja raha hai... ⏳', '⏳');
-    const tx = await usdc.transfer(recipient, amtParsed);
+
+    const tx = await signer.sendTransaction({
+      to: recipient,
+      value: amtParsed,
+      gasLimit: ethers.utils.hexlify(21000)
+    });
+
     showToast('Transaction submitted! Hash: ' + tx.hash.slice(0,10) + '... 🚀', '🚀');
 
     const receipt = await tx.wait();
     showToast('✅ Transfer confirmed! Block: ' + receipt.blockNumber, '✅');
 
-    // Open explorer
+    // Refresh balance & open explorer
+    fetchUSDCBalance();
     setTimeout(() => {
       window.open('https://testnet.arcscan.app/tx/' + tx.hash, '_blank');
     }, 1000);
