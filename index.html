@@ -1308,13 +1308,9 @@ function initMainApp() {
 // ARC TESTNET CONFIG
 // ═══════════════════════════════════════════════════════
 const ARC_TESTNET = {
-  chainId: '0x4CF49A', // 5042002
-  chainName: 'Arc Testnet',
-  nativeCurrency: {
-    name: 'USDC',
-    symbol: 'USDC',
-    decimals: 6
-  },
+  chainId: '0x4cef52', // 5042002 in hex — verified ARC Testnet chain ID
+  chainName: 'ARC Testnet',
+  nativeCurrency: { name: 'USDC', symbol: 'USDC', decimals: 6 },
   rpcUrls: ['https://rpc.testnet.arc.network'],
   blockExplorerUrls: ['https://testnet.arcscan.app']
 };
@@ -1567,7 +1563,7 @@ function initProfilePage() {
       </div>`;
     }).join('');
   } else if(actList && isConnected) {
-    actList.innerHTML = '<div style="color:var(--muted2);font-size:12px;text-align:center;padding:12px">No transactions yet — <span style="color:var(--neon2);cursor:pointer" onclick="showPage(&apos;faucet&apos;)">Get tokens →</span></div>';
+    actList.innerHTML = '<div style="color:var(--muted2);font-size:12px;text-align:center;padding:12px">No transactions yet — <span style="color:var(--neon2);cursor:pointer" onclick="showPage(\'faucet\')">Get tokens →</span></div>';
   }
 }
 
@@ -1698,7 +1694,7 @@ function updateWalletOverview(usdcBalance, address) {
     </div>
     <div class="wallet-item">
       <div class="chain-icon" style="background:rgba(124,58,237,0.15)">⚡</div>
-      <div><div class="chain-name">ARC Chain</div><div class="chain-sub">Chain ID: Chain 5042002</div></div>
+      <div><div class="chain-name">ARC Chain</div><div class="chain-sub">Chain ID: 5042002</div></div>
       <div class="chain-bal"><div class="chain-usd" style="font-size:11px;color:var(--neon4)">Connected</div><div class="chain-token">EVM</div></div>
     </div>
     <div class="wallet-item">
@@ -1744,7 +1740,7 @@ async function fetchRecentTransactions(addr) {
       document.getElementById('recentActivityList').innerHTML = `
         <div style="color:var(--muted2);font-size:12px;padding:10px 0;text-align:center">
           No transactions yet on ARC Testnet.<br>
-          <span onclick="showPage(&apos;faucet&apos;)" style="color:var(--neon2);cursor:pointer">Get testnet tokens →</span>
+          <span onclick="showPage('faucet')" style="color:var(--neon2);cursor:pointer">Get testnet tokens →</span>
         </div>`;
     }
   } catch(e) {
@@ -2254,7 +2250,7 @@ h += '</div>';
     h += '<div class="faucet-info-card"><div class="icon">🔒</div><h4>Requirements</h4><p>Valid EVM address. No KYC needed.</p></div>';
     h += '</div>';
     h += '<div class="card action-card" style="margin-top:0"><div class="section-title">Supported Testnets</div>';
-    h += '<div class="network-item"><div class="net-dot green"></div><div class="net-name">ARC Testnet</div><div style="font-size:12px;color:var(--muted2)">USDC native · 1 USDC/day · Chain Chain 5042002</div></div>';
+    h += '<div class="network-item"><div class="net-dot green"></div><div class="net-name">ARC Testnet</div><div style="font-size:12px;color:var(--muted2)">USDC native · 1 USDC/day · Chain 5042002</div></div>';
     h += '<div class="network-item"><div class="net-dot green"></div><div class="net-name">Base Sepolia</div><div style="font-size:12px;color:var(--muted2)">ETH + USDC · Circle Faucet</div></div>';
     h += '<div class="network-item"><div class="net-dot yellow"></div><div class="net-name">Ethereum Sepolia</div><div style="font-size:12px;color:var(--muted2)">ETH · 0.05 ETH/day</div></div>';
     h += '</div>';
@@ -2307,7 +2303,7 @@ h += '</div>';
       h += '<div class="proto-card-icon">'+pc.icon+'</div>';
       h += '<div class="proto-card-body">';
       h += '<div class="proto-card-label">'+pc.label+'</div>';
-      h += '<div class="proto-card-val" id="'+pc.id+'"><span class="skeleton" style="width:70px;height:22px">&nbsp;</span></div>';
+      h += '<div class="proto-card-val" id="'+pc.id+'"><span class="skeleton" style="width:70px;height:22px"> </span></div>';
       h += '<div class="proto-card-change" id="'+pc.chid+'">Loading…</div>';
       h += '</div>';
       h += '<div class="proto-card-sparkline"><svg viewBox="0 0 80 28" preserveAspectRatio="none" width="80" height="28"><polyline id="'+pc.spid+'" points="" fill="none" stroke="'+pc.spark+'" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>';
@@ -2399,7 +2395,7 @@ h += '</div>';
     h += '<div style="font-size:13px;font-weight:700;margin-bottom:12px">🔗 Wallet Details</div>';
     h += '<div class="setting-row" style="padding:8px 0"><div><div class="setting-label">Address</div><div id="profileFullAddr" class="setting-sub" style="font-family:JetBrains Mono,monospace;font-size:10px">' + (wa || 'Not connected') + '</div></div>';
     h += '<button onclick="copyAddress()" style="background:var(--glass);border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-size:11px;cursor:pointer;color:var(--text)">📋 Copy</button></div>';
-    h += '<div class="setting-row" style="padding:8px 0"><div><div class="setting-label">Network</div><div class="setting-sub">ARC Testnet · Chain Chain 5042002</div></div><span class="net-badge">⚡ Connected</span></div>';
+    h += '<div class="setting-row" style="padding:8px 0"><div><div class="setting-label">Network</div><div class="setting-sub">ARC Testnet · Chain 5042002</div></div><span class="net-badge">⚡ Connected</span></div>';
     h += '<div class="setting-row" style="padding:8px 0"><div><div class="setting-label">Explorer</div><div class="setting-sub">View all transactions on ArcScan</div></div>';
     h += '<a href="' + expUrl + '" target="_blank" style="color:var(--neon2);font-size:12px;font-weight:600">ArcScan ↗</a></div>';
     h += '</div>';
@@ -2419,7 +2415,7 @@ h += '</div>';
     h += '<div class="settings-section"><h3>Wallet</h3>';
     h += '<div class="setting-row"><div><div class="setting-label">Connected Wallet</div><div class="setting-sub">' + ws3 + '</div></div>';
     h += '<button class="btn-connect" style="padding:8px 14px;font-size:12px" onclick="openWalletModal()">' + (conn2 ? 'Switch' : 'Connect') + '</button></div>';
-    h += '<div class="setting-row"><div><div class="setting-label">Network</div><div class="setting-sub">ARC Testnet · Chain ID Chain 5042002</div></div>';
+    h += '<div class="setting-row"><div><div class="setting-label">Network</div><div class="setting-sub">ARC Testnet · Chain ID 5042002</div></div>';
     h += '<a href="https://testnet.arcscan.app" target="_blank" style="font-size:12px;color:var(--neon2)">Explorer ↗</a></div>';
     h += '<div class="setting-row"><div><div class="setting-label">RPC Endpoint</div><div class="setting-sub">rpc.testnet.arc.network</div></div>';
     h += '<button style="background:var(--glass);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:Syne,sans-serif;font-size:11px;padding:6px 12px;cursor:pointer" onclick="addArcTestnet().then(function(){showToast(\'ARC Testnet added!\',\'⚡\')})">Add to Wallet</button></div>';
@@ -2902,7 +2898,7 @@ window.doWithdraw = async function() {
     }
 
     // --- ARC TESTNET RPC & NETWORK AUTO-SWITCH ---
-    const ARC_TESTNET_ID = ARC_TESTNET.chainId; // ARC Testnet Chain ID
+    const ARC_TESTNET_ID = "0x4cef52"; // 5042002 ARC Testnet Chain ID
     try {
         const currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
         if (currentChainId !== ARC_TESTNET_ID) {
@@ -2918,9 +2914,9 @@ window.doWithdraw = async function() {
                         params: [{
                             chainId: ARC_TESTNET_ID,
                             chainName: 'ARC Testnet',
-                            nativeCurrency: { name: 'ARC', symbol: 'ARC', decimals: 18 },
-                            rpcUrls: ["https://rpc-testnet.arc.io"],
-                            blockExplorerUrls: ['https://explorer-testnet.arc.io']
+                            nativeCurrency: { name: 'USDC', symbol: 'USDC', decimals: 18 },
+                            rpcUrls: ["https://rpc.testnet.arc.network"],
+                            blockExplorerUrls: ['https://testnet.arcscan.app']
                         }],
                     });
                 } else {
