@@ -1436,6 +1436,12 @@ function onWalletConnected(address, walletName) {
   fetchAllRealData();
   fetchUSDCBalance();
   
+  // Auto-refresh balance every 30 seconds
+  if (window._balanceTimer) clearInterval(window._balanceTimer);
+  window._balanceTimer = setInterval(() => {
+    if (isConnected) fetchUSDCBalance();
+  }, 30000);
+
   // Listen for account changes
   if (window.ethereum) {
     window.ethereum.on('accountsChanged', (accounts) => {
@@ -1621,54 +1627,47 @@ function copyAddress() {
 async function fetchAllRealData() {
   if (!isConnected && !demoMode) return;
   if (demoMode) { loadDemoData(); return; }
-  
-  showToast('Fetching wallet data...', '⏳');
-  
-  const ca = "0xD628F82B8339e601529F76a9dF70C48E658cA882";
+  const addr = walletAddress;
+  if (!addr) return;
   const rpc = 'https://rpc.testnet.arc.network';
-  
-  // Ping check
   const t0 = Date.now();
-  
   try {
-    // 1. Get native USDC balance (ARC native token is USDC with 6 decimals)
-    const balRes = await jsonRPC(rpc, 'eth_getBalance', [walletAddress, 'latest']);
-    const arcPingMs = Date.now() - t0;
-    document.getElementById('arcPing').textContent = arcPingMs + 'ms';
-    
-    let nativeBalRaw = 0;
-    if (balRes && balRes.result) {
-      nativeBalRaw = parseInt(balRes.result, 16);
-    }
-    // ARC native token is USDC (18 decimals)
-    const nativeUSDC = (nativeBalRaw / 1e18).toFixed(4);
-    
-    document.getElementById('balanceDisplay').textContent = nativeUSDC + ' USDC';
-    document.getElementById('balanceChange').textContent = '⚡ ARC Testnet · Native USDC';
-    document.getElementById('statUsdc').textContent = nativeUSDC;
-    
-    // 2. Get transaction count
-    const txCountRes = await jsonRPC(rpc, 'eth_getTransactionCount', [walletAddress, 'latest']);
-    let txCount = 0;
-    if (txCountRes && txCountRes.result) {
-      txCount = parseInt(txCountRes.result, 16);
-    }
-    document.getElementById('statTxCount').textContent = txCount;
-    document.getElementById('statSaved').textContent = '$' + (txCount * 0.02).toFixed(2);
-    
-    // 3. Update wallet overview with real balance
+    const balRes = await jsonRPC(rpc, 'eth_getBalance', [addr, 'latest']);
+    const ping = Date.now() - t0;
+    const pingEl = document.getElementById('arcPing'); if(pingEl) pingEl.textContent = ping+'ms';
+    let nativeBal = balRes?.result ? parseInt(balRes.result,16) : 0;
+    const nativeUSDC = (nativeBal/1e18).toFixed(4);
+    window.usdcBalance = nativeUSDC; window.walletBalance = nativeUSDC;
+
+    // ARCAgent token balance via eth_call (balanceOf selector = 0x70a08231)
+    const tokenData = '0x70a08231'+'0'.repeat(24)+addr.slice(2).toLowerCase();
+    const tokRes = await jsonRPC(rpc,'eth_call',[{to:'0xD628F82B8339e601529F76a9dF70C48E658cA882',data:tokenData},'latest']);
+    let arcBal = '0.0000';
+    if(tokRes?.result && tokRes.result !== '0x') arcBal = (parseInt(tokRes.result,16)/1e18).toFixed(4);
+    window.arcTokenBalance = arcBal;
+
+    const txcRes = await jsonRPC(rpc,'eth_getTransactionCount',[addr,'latest']);
+    const txCount = txcRes?.result ? parseInt(txcRes.result,16) : 0;
+
+    // Update all balance displays
+    ['balanceDisplay','statUsdc','portUsdc','investWalletBal','sidebarBal',
+     'headerBalance','profileBalance','usdcBalance','statUsdcBal'].forEach(id => {
+      const el=document.getElementById(id); if(el) el.textContent=nativeUSDC+' USDC';
+    });
+    const bcEl=document.getElementById('balanceChange'); if(bcEl) bcEl.textContent='⚡ ARC Testnet · Native USDC';
+    const txEl=document.getElementById('statTxCount'); if(txEl) txEl.textContent=txCount;
+    const svEl=document.getElementById('statSaved'); if(svEl) svEl.textContent='$'+(txCount*0.02).toFixed(2);
+    const arcEl=document.getElementById('statArcToken'); if(arcEl) arcEl.textContent=arcBal;
+    const netEl=document.getElementById('statNetwork'); if(netEl) netEl.textContent='ARC Testnet';
+
     updateWalletOverview(nativeUSDC, addr);
-    
-    // 4. Fetch recent transactions from ArcScan
     await fetchRecentTransactions(addr);
-    
-    showToast('Real data loaded! ✅', '📊');
     updateSidebarProfile(addr, null, txCount, nativeUSDC);
-    
+    showToast('Data loaded ✅','📊');
+    // Update stats page if visible
+    fetchProtocolStatsPage();
   } catch(err) {
-    console.error('Data fetch error:', err);
-    showToast('Could not fetch all data. Showing partial data.', '⚠️');
-    // Still show what we have
+    console.error('fetchAllRealData:', err);
     loadPartialDemoData();
   }
 }
@@ -1687,7 +1686,8 @@ async function jsonRPC(url, method, params) {
 }
 
 function updateWalletOverview(usdcBalance, address) {
-  const short = address.slice(0, 6) + '...' + address.slice(-4);
+  const short = address.slice(0,6)+'...'+address.slice(-4);
+  const arcBal = window.arcTokenBalance || '0.0000';
   document.getElementById('walletOverviewList').innerHTML = `
     <div class="wallet-item">
       <div class="chain-icon" style="background:rgba(16,185,129,0.15)">💵</div>
@@ -1695,16 +1695,15 @@ function updateWalletOverview(usdcBalance, address) {
       <div class="chain-bal"><div class="chain-usd">${usdcBalance}</div><div class="chain-token">USDC</div></div>
     </div>
     <div class="wallet-item">
-      <div class="chain-icon" style="background:rgba(124,58,237,0.15)">⚡</div>
-      <div><div class="chain-name">ARC Chain</div><div class="chain-sub">Chain ID: 5042002</div></div>
-      <div class="chain-bal"><div class="chain-usd" style="font-size:11px;color:var(--neon4)">Connected</div><div class="chain-token">EVM</div></div>
-    </div>
-    <div class="wallet-item">
-      <div class="chain-icon" style="background:rgba(6,182,212,0.15)">🔗</div>
-      <div><div class="chain-name">Block Explorer</div><div class="chain-sub"><a href="https://testnet.arcscan.app/address/${address}" target="_blank" style="color:var(--neon2)">View on ArcScan ↗</a></div></div>
-      <div class="chain-bal"><div class="chain-usd" style="font-size:10px">Live</div></div>
-    </div>
-  `;
+      <div class="chain-icon" style="background:rgba(139,92,246,0.15)">🪙</div>
+      <div><div class="chain-name">ARCAgent Token</div><div class="chain-sub">0xD628F82B...Ca882 · ARC Testnet</div></div>
+      <div class="chain-bal"><div class="chain-usd">${arcBal}</div><div class="chain-token">ARC</div></div>
+    </div>`;
+  // Update portfolio totals
+  const portTotal = document.getElementById('portTotal');
+  if (portTotal) portTotal.textContent = '$' + parseFloat(usdcBalance).toFixed(2);
+  const portUsdcEl = document.getElementById('portUsdc');
+  if (portUsdcEl) portUsdcEl.textContent = usdcBalance + ' USDC';
 }
 
 async function fetchRecentTransactions(addr) {
@@ -1737,7 +1736,14 @@ async function fetchRecentTransactions(addr) {
 
     if (allTxns.length > 0) {
       renderTransactionList(allTxns, addr, 'all');
+      // Also update activity page
+      filterActivity('all');
       renderRecentActivitySidebar(allTxns.slice(0,3), addr);
+      // Update tx count in stats + portfolio
+      const txCountEl = document.getElementById('statTxCount');
+      if (txCountEl) txCountEl.textContent = allTxns.length;
+      const portTxEl = document.getElementById('portTxCount');
+      if (portTxEl) portTxEl.textContent = allTxns.length + ' txns';
     } else {
       document.getElementById('recentActivityList').innerHTML = `
         <div style="color:var(--muted2);font-size:12px;padding:10px 0;text-align:center">
@@ -1758,7 +1764,7 @@ function renderRecentActivitySidebar(txns, myAddr) {
   if (!txns || txns.length === 0) return;
   const html = txns.map(tx => {
     const isOut = tx.from.toLowerCase() === myAddr.toLowerCase();
-    const val = (parseInt(tx.value) / 1e6).toFixed(4);
+    const val = (parseInt(tx.value) / 1e18).toFixed(4);
     const ago = timeAgo(parseInt(tx.timeStamp) * 1000);
     const to_short = tx.to ? tx.to.slice(0,6)+'...'+tx.to.slice(-4) : '—';
     return `
@@ -1796,7 +1802,7 @@ function renderTransactionList(txns, myAddr, filter) {
   
   container.innerHTML = filtered.map(tx => {
     const isOut = tx.from.toLowerCase() === myAddr.toLowerCase();
-    const val = (parseInt(tx.value) / 1e6).toFixed(4);
+    const val = (parseInt(tx.value) / 1e18).toFixed(4);
     const ago = timeAgo(parseInt(tx.timeStamp) * 1000);
     const hash_short = tx.hash.slice(0,10)+'...'+tx.hash.slice(-6);
     const to_short = tx.to ? tx.to.slice(0,6)+'...'+tx.to.slice(-4) : 'Contract';
@@ -2615,71 +2621,32 @@ async function executeTransfer() {
 // ═══════════════════════════════════════════════════════
 async function executeSwap() {
   if (!isConnected || demoMode) { openWalletModal(); return; }
-
-  const fromTok  = document.getElementById('swapFromToken')?.value || 'USDC';
-  const toTok    = document.getElementById('swapToToken')?.value   || 'ETH';
-  const amountEl = document.getElementById('swapAmountInput');
-  const amount   = amountEl ? amountEl.value.trim() : '';
-
-  if (!amount || parseFloat(amount) <= 0) {
-    showToast('Kripya valid amount enter karein ⚠️', '⚠️'); return;
-  }
-
-  // Chain switch
-  const ARC_ID = '0x4cef52';
+  const fromTok = document.getElementById('swapFromToken')?.value || 'USDC';
+  const toTok   = document.getElementById('swapToToken')?.value   || 'ETH';
+  const amountEl= document.getElementById('swapAmountInput');
+  const amount  = amountEl ? amountEl.value.trim() : '';
+  if (!amount || parseFloat(amount)<=0) { showToast('Amount enter karein ⚠️','⚠️'); return; }
+  const ARC_ID='0x4cef52';
   try {
-    const cur = await window.ethereum.request({ method: 'eth_chainId' });
-    if (cur !== ARC_ID) await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: ARC_ID }] });
-  } catch(e) { showToast('Network switch failed ❌', '❌'); return; }
-
-  showToast('Swap approve karein wallet mein... 🔄', '🔄');
-
+    const cur=await window.ethereum.request({method:'eth_chainId'});
+    if(cur!==ARC_ID) await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:ARC_ID}]});
+  } catch(e) { showToast('Network switch failed ❌','❌'); return; }
+  showToast('Swap approve karein wallet mein... 🔄','🔄');
   try {
-    const provider  = new ethers.providers.Web3Provider(window.ethereum);
-    const signer    = provider.getSigner();
-
-    // ARCAgent contract — ERC-20 transfer = real contract interaction in wallet
-    const ARC_AGENT = '0xD628F82B8339e601529F76a9dF70C48E658cA882';
-    const ERC20_ABI = [
-      'function transfer(address to, uint256 amount) returns (bool)',
-      'function decimals() view returns (uint8)',
-      'function balanceOf(address) view returns (uint256)'
-    ];
-    const arcContract = new ethers.Contract(ARC_AGENT, ERC20_ABI, signer);
-    const decimals    = await arcContract.decimals();
-    const amtParsed   = ethers.utils.parseUnits(amount, decimals);
-
-    // Check balance
-    const bal = await arcContract.balanceOf(walletAddress);
-    if (bal.lt(amtParsed)) {
-      // Fallback: native USDC send to contract address (still contract tx)
-      const nativeAmt = ethers.utils.parseUnits(amount, 18);
-      showToast('ARCToken balance low — USDC se swap... ⏳', '⏳');
-      const tx = await signer.sendTransaction({
-        to: ARC_AGENT,
-        value: nativeAmt,
-        gasLimit: ethers.utils.hexlify(60000)
-      });
-      showToast('Swap submitted! ' + tx.hash.slice(0,10) + '... 🚀', '🚀');
-      const receipt = await tx.wait();
-      showToast('✅ Swap confirmed! ' + amount + ' USDC → ' + toTok + ' | Block: ' + receipt.blockNumber, '✅');
-      fetchUSDCBalance();
-      setTimeout(() => window.open('https://testnet.arcscan.app/tx/' + tx.hash, '_blank'), 1000);
-      return;
-    }
-
-    showToast('Transaction bheja ja raha hai... ⏳', '⏳');
-    const tx = await arcContract.transfer(walletAddress, amtParsed); // self-transfer triggers contract event
-    showToast('Swap submitted! Hash: ' + tx.hash.slice(0,10) + '... 🚀', '🚀');
-    const receipt = await tx.wait();
-    showToast('✅ Swap confirmed! ' + amount + ' ' + fromTok + ' → ' + toTok + ' | Block: ' + receipt.blockNumber, '✅');
-    fetchUSDCBalance();
-    setTimeout(() => window.open('https://testnet.arcscan.app/tx/' + tx.hash, '_blank'), 1000);
-
+    const provider=new ethers.providers.Web3Provider(window.ethereum);
+    const signer=provider.getSigner();
+    const ARC_AGENT='0xD628F82B8339e601529F76a9dF70C48E658cA882';
+    const amtParsed=ethers.utils.parseUnits(amount,18);
+    // Native USDC → ARCAgent contract = real contract tx in wallet
+    const tx=await signer.sendTransaction({to:ARC_AGENT,value:amtParsed,gasLimit:ethers.utils.hexlify(80000)});
+    showToast('Swap submitted! '+tx.hash.slice(0,10)+'... 🚀','🚀');
+    const receipt=await tx.wait();
+    showToast('✅ Swap confirmed! '+amount+' '+fromTok+' → '+toTok+' | Block:'+receipt.blockNumber,'✅');
+    fetchUSDCBalance(); fetchAllRealData();
+    setTimeout(()=>window.open('https://testnet.arcscan.app/tx/'+tx.hash,'_blank'),1000);
   } catch(err) {
-    console.error('Swap failed:', err);
-    if (err.code === 4001) showToast('Swap cancel kar di ❌', '❌');
-    else showToast('Swap failed: ' + (err.reason || err.message || 'Unknown') + ' ❌', '❌');
+    if(err.code===4001) showToast('Swap cancel ❌','❌');
+    else showToast('Swap failed: '+(err.reason||err.message||'Unknown')+' ❌','❌');
   }
 }
 
@@ -2688,51 +2655,33 @@ async function executeSwap() {
 // ═══════════════════════════════════════════════════════
 async function executeBridge() {
   if (!isConnected || demoMode) { openWalletModal(); return; }
-
-  const amountEl  = document.getElementById('amountInput');
-  const recipEl   = document.getElementById('recipientInput');
-  const amount    = amountEl ? amountEl.value.trim() : '';
-  const recipient = recipEl && recipEl.value.trim().length === 42 ? recipEl.value.trim() : null;
-  const toChain   = document.getElementById('toChain')?.value || 'Base Sepolia';
-
-  if (!amount || parseFloat(amount) <= 0) {
-    showToast('Kripya valid amount enter karein ⚠️', '⚠️'); return;
-  }
-
-  const ARC_ID = '0x4cef52';
+  const amountEl=document.getElementById('amountInput');
+  const recipEl =document.getElementById('recipientInput');
+  const toChainEl=document.getElementById('toChain');
+  const amount  =amountEl ? amountEl.value.trim() : '';
+  const recipient=recipEl && recipEl.value.trim().length===42 ? recipEl.value.trim() : null;
+  const toChain =toChainEl ? toChainEl.value : 'Base Sepolia';
+  if (!amount||parseFloat(amount)<=0) { showToast('Amount enter karein ⚠️','⚠️'); return; }
+  if (!recipient) { showToast('Valid recipient address enter karein ⚠️','⚠️'); return; }
+  const ARC_ID='0x4cef52';
   try {
-    const cur = await window.ethereum.request({ method: 'eth_chainId' });
-    if (cur !== ARC_ID) await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: ARC_ID }] });
-  } catch(e) { showToast('Network switch failed ❌', '❌'); return; }
-
-  showToast('Bridge approve karein wallet mein... ⛓️', '⛓️');
-
+    const cur=await window.ethereum.request({method:'eth_chainId'});
+    if(cur!==ARC_ID) await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:ARC_ID}]});
+  } catch(e) { showToast('Network switch failed ❌','❌'); return; }
+  showToast('Bridge approve karein... ⛓️','⛓️');
   try {
-    const provider  = new ethers.providers.Web3Provider(window.ethereum);
-    const signer    = provider.getSigner();
-
-    // Send native USDC to ARCAgent contract — real contract interaction
-    const ARC_AGENT = '0xD628F82B8339e601529F76a9dF70C48E658cA882';
-    const dest      = recipient || ARC_AGENT;
-    const amtParsed = ethers.utils.parseUnits(amount, 18);
-
-    showToast('Bridge transaction bheja ja raha hai... ⏳', '⏳');
-    const tx = await signer.sendTransaction({
-      to: dest,
-      value: amtParsed,
-      gasLimit: ethers.utils.hexlify(60000)
-    });
-
-    showToast('Bridge submitted! Hash: ' + tx.hash.slice(0,10) + '... ⛓️', '⛓️');
-    const receipt = await tx.wait();
-    showToast('✅ Bridge confirmed! ' + amount + ' USDC → ' + toChain + ' | Block: ' + receipt.blockNumber, '✅');
-    fetchUSDCBalance();
-    setTimeout(() => window.open('https://testnet.arcscan.app/tx/' + tx.hash, '_blank'), 1000);
-
+    const provider=new ethers.providers.Web3Provider(window.ethereum);
+    const signer=provider.getSigner();
+    const amtParsed=ethers.utils.parseUnits(amount,18);
+    const tx=await signer.sendTransaction({to:recipient,value:amtParsed,gasLimit:ethers.utils.hexlify(60000)});
+    showToast('Bridge submitted! '+tx.hash.slice(0,10)+'...','⛓️');
+    const receipt=await tx.wait();
+    showToast('✅ Bridge confirmed! '+amount+' USDC → '+toChain+' | Block:'+receipt.blockNumber,'✅');
+    fetchUSDCBalance(); fetchAllRealData();
+    setTimeout(()=>window.open('https://testnet.arcscan.app/tx/'+tx.hash,'_blank'),1000);
   } catch(err) {
-    console.error('Bridge failed:', err);
-    if (err.code === 4001) showToast('Bridge cancel kar di ❌', '❌');
-    else showToast('Bridge failed: ' + (err.reason || err.message || 'Unknown') + ' ❌', '❌');
+    if(err.code===4001) showToast('Bridge cancel ❌','❌');
+    else showToast('Bridge failed: '+(err.reason||err.message||'Unknown')+' ❌','❌');
   }
 }
 
@@ -2743,53 +2692,16 @@ async function fetchUSDCBalance() {
   if (!isConnected || !walletAddress) return;
   try {
     const provider = new ethers.providers.Web3Provider(window.ethereum);
-
-    // Native USDC balance (18 decimals on ARC)
-    const balWei  = await provider.getBalance(walletAddress);
-    let balUSDC   = parseFloat(ethers.utils.formatUnits(balWei, 18)).toFixed(4);
-
-    // Also check ERC-20 interface (6 decimals) as cross-check
-    try {
-      const ERC20  = ['function balanceOf(address) view returns (uint256)'];
-      const usdc   = new ethers.Contract('0x3600000000000000000000000000000000000000', ERC20, provider);
-      const ercRaw = await usdc.balanceOf(walletAddress);
-      const ercBal = parseFloat(ethers.utils.formatUnits(ercRaw, 6)).toFixed(4);
-      if (parseFloat(ercBal) > 0) balUSDC = ercBal;
-    } catch(_) {}
-
-    // Also fetch ARCAgent token balance
-    let arcTokenBal = '0.0000';
-    try {
-      const ERC20  = ['function balanceOf(address) view returns (uint256)', 'function decimals() view returns (uint8)'];
-      const arcTok = new ethers.Contract('0xD628F82B8339e601529F76a9dF70C48E658cA882', ERC20, provider);
-      const dec    = await arcTok.decimals();
-      const raw    = await arcTok.balanceOf(walletAddress);
-      arcTokenBal  = parseFloat(ethers.utils.formatUnits(raw, dec)).toFixed(4);
-    } catch(_) {}
-
-    window.usdcBalance  = balUSDC;
-    window.walletBalance = balUSDC;
-    window.arcTokenBalance = arcTokenBal;
-
-    // Update ALL balance display elements across all pages
-    const usdcEls = [
-      'usdcBalance','walletBalance','usdcBal','balanceDisplay',
-      'portUsdc','investWalletBal','sideUSDC','headerBalance',
-      'statUsdc','profileBalance','sidebarBal'
-    ];
-    usdcEls.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.textContent = balUSDC + ' USDC';
+    const balWei = await provider.getBalance(walletAddress);
+    const bal = parseFloat(ethers.utils.formatUnits(balWei,18)).toFixed(4);
+    window.usdcBalance = bal; window.walletBalance = bal;
+    ['balanceDisplay','statUsdc','portUsdc','investWalletBal','sidebarBal',
+     'headerBalance','profileBalance','usdcBalance','statUsdcBal'].forEach(id => {
+      const el=document.getElementById(id); if(el) el.textContent=bal+' USDC';
     });
-
-    // Update invest page wallet balance specifically
-    const investBal = document.getElementById('investWalletBal');
-    if (investBal) investBal.textContent = balUSDC + ' USDC';
-
-    console.log('Balance fetched → USDC:', balUSDC, '| ARCToken:', arcTokenBal);
-  } catch(e) {
-    console.warn('Balance fetch error:', e.message);
-  }
+    // Update invest page wallet bal if visible
+    const iwb=document.getElementById('investWalletBal'); if(iwb) iwb.textContent=bal+' USDC';
+  } catch(e) { console.warn('fetchUSDCBalance:',e.message); }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -3142,95 +3054,10 @@ async function fetchProtocolStatsPage() {
 // ========================================================
 // GLOBAL WITHDRAW FUNCTION (FIXED FOR DYNAMIC PANEL & ARC TESTNET)
 // ========================================================
-window.doWithdraw = async function() {
-    console.log("Withdraw execution started!");
-    
-    if (!window.ethereum) {
-        alert("Please connect your wallet first!");
-        return;
-    }
-
-    // --- ARC TESTNET RPC & NETWORK AUTO-SWITCH ---
-    const ARC_TESTNET_ID = "0x4cef52"; // 5042002 ARC Testnet Chain ID
-    try {
-        const currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
-        if (currentChainId !== ARC_TESTNET_ID) {
-            try {
-                await window.ethereum.request({
-                    method: 'wallet_switchEthereumChain',
-                    params: [{ chainId: ARC_TESTNET_ID }],
-                });
-            } catch (err) {
-                if (err.code === 4902) {
-                    await window.ethereum.request({
-                        method: 'wallet_addEthereumChain',
-                        params: [{
-                            chainId: ARC_TESTNET_ID,
-                            chainName: 'ARC Testnet',
-                            nativeCurrency: { name: 'USDC', symbol: 'USDC', decimals: 18 },
-                            rpcUrls: ["https://rpc.testnet.arc.network"],
-                            blockExplorerUrls: ['https://testnet.arcscan.app']
-                        }],
-                    });
-                } else {
-                    alert("Kripya wallet ko ARC Testnet par switch karein.");
-                    return;
-                }
-            }
-        }
-    } catch (e) {
-        console.error("Network switch error:", e);
-        return;
-    }
-
-    // --- FETCH AMOUNT FROM CORRECT ID ---
-    const inputEl = document.getElementById('investWithdrawAmt'); 
-    if (!inputEl) {
-        alert("Input field 'investWithdrawAmt' nahi mili! HTML block check karein.");
-        return;
-    }
-
-    const amount = inputEl.value;
-    if (!amount || parseFloat(amount) <= 0) {
-        alert("Kripya withdraw karne ke liye sahi amount enter karein.");
-        return;
-    }
-
-    try {
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
-        const signer = provider.getSigner();
-        
-        // Smart Contract Interaction Validation
-        if (typeof stakingContract !== "undefined" && stakingContract) {
-            alert(`ARC Testnet par ${amount} USDC withdraw karne ke liye request bheji ja rahi hai...`);
-            const tx = await stakingContract.withdraw(ethers.utils.parseUnits(amount, 18));
-            await tx.wait();
-            alert("📤 Withdrawal Successful!");
-        } else {
-            alert(`✨ ARC Testnet Connected!\nAmount: ${amount} USDC\n(Smart contract connection trigger complete!)`);
-        }
-        
-        inputEl.value = ""; // Success ke baad field clear karein
-        
-    } catch (error) {
-        console.error("Withdraw transaction failed:", error);
-        alert("Transaction fail ho gayi ya wallet se cancel kar di gayi.");
-    }
-}
 
 // ========================================================
 // GLOBAL setWithdrawMax FUNCTION
 // ========================================================
-window.setWithdrawMax = function() {
-    const stakedDisplay = document.getElementById('withdrawStakedDisplay');
-    const inputEl = document.getElementById('investWithdrawAmt');
-    if (stakedDisplay && inputEl) {
-        const maxAmount = stakedDisplay.textContent.replace(' USDC', '').trim();
-        if (maxAmount && maxAmount !== '—') {
-            inputEl.value = maxAmount;
-        }
-    }
-}
 
 
 window.switchInvestTab = function(tab){
@@ -3242,45 +3069,106 @@ window.switchInvestTab = function(tab){
   });
 };
 
+// ═══════════════════════════════════════════════
+// INVEST PAGE FUNCTIONS
+// ═══════════════════════════════════════════════
 
-// ═══════════════════════════════════════
-// DEPOSIT / WITHDRAW / CLAIM — REAL TXN
-// ═══════════════════════════════════════
+
+
+
+window.setWithdrawMax = function() {
+  const staked = parseFloat(window.stakedBalance || '0');
+  const el = document.getElementById('investWithdrawAmt');
+  if (el) el.value = staked.toFixed(4);
+};
+
+
+
+
+
+window.doWithdraw = async function() {
+  if (!window.isConnected || window.demoMode) { openWalletModal(); return; }
+  const amtEl = document.getElementById('investWithdrawAmt');
+  const amount = amtEl ? amtEl.value.trim() : '';
+  if (!amount || parseFloat(amount) <= 0) {
+    showToast('Kripya withdraw amount enter karein ⚠️', '⚠️'); return;
+  }
+  showToast('Withdraw request bheja ja raha hai... ⏳', '⏳');
+  try {
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const signer = provider.getSigner();
+    const ARC_AGENT = '0xD628F82B8339e601529F76a9dF70C48E658cA882';
+    const amtParsed = ethers.utils.parseUnits(amount, 18);
+    const tx = await signer.sendTransaction({
+      to: ARC_AGENT, value: amtParsed, gasLimit: ethers.utils.hexlify(60000)
+    });
+    showToast('Withdraw submitted! ' + tx.hash.slice(0,10) + '...', '✅');
+    const receipt = await tx.wait();
+    showToast('✅ Withdraw confirmed! Block: ' + receipt.blockNumber, '✅');
+    fetchUSDCBalance();
+    fetchAllRealData();
+    setTimeout(() => window.open('https://testnet.arcscan.app/tx/' + tx.hash, '_blank'), 1000);
+  } catch(err) {
+    if (err.code === 4001) showToast('Withdraw cancel kar di ❌', '❌');
+    else showToast('Withdraw failed: ' + (err.reason || err.message || 'Unknown') + ' ❌', '❌');
+  }
+};
+// ═══════════════════════════════════════════
+// INVEST PAGE — ALL FUNCTIONS
+// ═══════════════════════════════════════════
+window.setInvestPct = function(pct) {
+  const bal = parseFloat(window.usdcBalance || '0');
+  const amt = (bal * pct / 100).toFixed(4);
+  const el  = document.getElementById('investDepositAmt');
+  if (el) { el.value = amt; window.updateDepositPreview(); }
+};
+
+window.setInvestMax = function() {
+  const bal = parseFloat(window.usdcBalance || '0');
+  const el  = document.getElementById('investDepositAmt');
+  if (el) { el.value = bal.toFixed(4); window.updateDepositPreview(); }
+};
+
+window.setWithdrawMax = function() {
+  const staked = parseFloat(window.stakedBalance || '0');
+  const el = document.getElementById('investWithdrawAmt');
+  if (el) el.value = staked.toFixed(4);
+};
+
+window.updateDepositPreview = function() {
+  const amt = parseFloat(document.getElementById('investDepositAmt')?.value || '0');
+  const yearly  = (amt * 12.5 / 100).toFixed(4);
+  const monthly = (amt * 12.5 / 100 / 12).toFixed(4);
+  const el = document.getElementById('depositPreview');
+  if (el) el.innerHTML = '<div style="font-size:11px;color:var(--muted2)">Est. Yearly: <b style="color:var(--neon4)">'+yearly+' USDC</b> &nbsp;|&nbsp; Monthly: <b style="color:var(--neon4)">'+monthly+' USDC</b></div>';
+};
+
 window.doApproveDeposit = async function() {
   if (!window.isConnected || window.demoMode) { openWalletModal(); return; }
   const amtEl  = document.getElementById('investDepositAmt');
   const amount = amtEl ? amtEl.value.trim() : '';
-  if (!amount || parseFloat(amount) <= 0) { showToast('Valid amount enter karein ⚠️','⚠️'); return; }
-
+  if (!amount || parseFloat(amount)<=0) { showToast('Deposit amount enter karein ⚠️','⚠️'); return; }
   const ARC_ID = '0x4cef52';
   try {
-    const cur = await window.ethereum.request({ method: 'eth_chainId' });
-    if (cur !== ARC_ID) await window.ethereum.request({ method: 'wallet_switchEthereumChain', params:[{chainId:ARC_ID}] });
+    const cur = await window.ethereum.request({method:'eth_chainId'});
+    if(cur!==ARC_ID) await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:ARC_ID}]});
   } catch(e) { showToast('Network switch failed ❌','❌'); return; }
-
   showToast('Deposit approve karein wallet mein... 🔐','🔐');
   try {
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     const signer   = provider.getSigner();
-    const ARC_AGENT = '0xD628F82B8339e601529F76a9dF70C48E658cA882';
-    const amtParsed = ethers.utils.parseUnits(amount, 18);
-
-    // Real contract interaction — wallet shows "Contract Interaction"
-    const tx = await signer.sendTransaction({
-      to: ARC_AGENT,
-      value: amtParsed,
-      gasLimit: ethers.utils.hexlify(60000)
-    });
-    showToast('Deposit submitted! ' + tx.hash.slice(0,10) + '... ⏳','⏳');
+    const ARC_AGENT= '0xD628F82B8339e601529F76a9dF70C48E658cA882';
+    const amtParsed= ethers.utils.parseUnits(amount,18);
+    const tx = await signer.sendTransaction({to:ARC_AGENT,value:amtParsed,gasLimit:ethers.utils.hexlify(80000)});
+    showToast('Deposit submitted! '+tx.hash.slice(0,10)+'... 🚀','🚀');
     const receipt = await tx.wait();
-    showToast('✅ Staked ' + amount + ' USDC! Block: ' + receipt.blockNumber,'✅');
-    window.stakedBalance = (parseFloat(window.stakedBalance||0) + parseFloat(amount)).toFixed(4);
-    const el = document.getElementById('withdrawStakedDisplay');
-    if(el) el.textContent = window.stakedBalance + ' USDC';
-    fetchUSDCBalance();
+    window.stakedBalance = (parseFloat(window.stakedBalance||'0')+parseFloat(amount)).toFixed(4);
+    const stEl=document.getElementById('investStaked'); if(stEl) stEl.textContent=window.stakedBalance+' USDC';
+    showToast('✅ Deposit confirmed! '+amount+' USDC | Block:'+receipt.blockNumber,'✅');
+    fetchUSDCBalance(); fetchAllRealData();
     setTimeout(()=>window.open('https://testnet.arcscan.app/tx/'+tx.hash,'_blank'),1000);
   } catch(err) {
-    if(err.code===4001) showToast('Transaction cancel kar di ❌','❌');
+    if(err.code===4001) showToast('Deposit cancel ❌','❌');
     else showToast('Deposit failed: '+(err.reason||err.message||'Unknown')+' ❌','❌');
   }
 };
@@ -3289,25 +3177,23 @@ window.doWithdraw = async function() {
   if (!window.isConnected || window.demoMode) { openWalletModal(); return; }
   const amtEl  = document.getElementById('investWithdrawAmt');
   const amount = amtEl ? amtEl.value.trim() : '';
-  if (!amount || parseFloat(amount) <= 0) { showToast('Valid amount enter karein ⚠️','⚠️'); return; }
-
+  if (!amount || parseFloat(amount)<=0) { showToast('Withdraw amount enter karein ⚠️','⚠️'); return; }
   const ARC_ID = '0x4cef52';
   try {
-    const cur = await window.ethereum.request({ method: 'eth_chainId' });
-    if (cur !== ARC_ID) await window.ethereum.request({ method: 'wallet_switchEthereumChain', params:[{chainId:ARC_ID}] });
+    const cur = await window.ethereum.request({method:'eth_chainId'});
+    if(cur!==ARC_ID) await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:ARC_ID}]});
   } catch(e) { showToast('Network switch failed ❌','❌'); return; }
-
-  showToast('Withdraw approve karein wallet mein... 📤','📤');
+  showToast('Withdraw approve karein... ⏳','⏳');
   try {
-    const provider  = new ethers.providers.Web3Provider(window.ethereum);
-    const signer    = provider.getSigner();
-    const ARC_AGENT = '0xD628F82B8339e601529F76a9dF70C48E658cA882';
-    const amtParsed = ethers.utils.parseUnits(amount, 18);
-    const tx = await signer.sendTransaction({ to: ARC_AGENT, value: amtParsed, gasLimit: ethers.utils.hexlify(60000) });
-    showToast('Withdraw submitted! ' + tx.hash.slice(0,10) + '... ⏳','⏳');
-    const receipt = await tx.wait();
-    showToast('✅ Withdrawn ' + amount + ' USDC! Block: ' + receipt.blockNumber,'✅');
-    fetchUSDCBalance();
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const signer   = provider.getSigner();
+    const ARC_AGENT= '0xD628F82B8339e601529F76a9dF70C48E658cA882';
+    const amtParsed= ethers.utils.parseUnits(amount,18);
+    const tx = await signer.sendTransaction({to:ARC_AGENT,value:amtParsed,gasLimit:ethers.utils.hexlify(80000)});
+    showToast('Withdraw submitted! '+tx.hash.slice(0,10)+'...','✅');
+    const receipt=await tx.wait();
+    showToast('✅ Withdraw confirmed! Block:'+receipt.blockNumber,'✅');
+    fetchUSDCBalance(); fetchAllRealData();
     setTimeout(()=>window.open('https://testnet.arcscan.app/tx/'+tx.hash,'_blank'),1000);
   } catch(err) {
     if(err.code===4001) showToast('Withdraw cancel ❌','❌');
@@ -3315,51 +3201,34 @@ window.doWithdraw = async function() {
   }
 };
 
-window.doClaimRewards = async function() {
-  if (!window.isConnected || window.demoMode) { openWalletModal(); return; }
-  const ARC_ID = '0x4cef52';
-  try {
-    const cur = await window.ethereum.request({ method: 'eth_chainId' });
-    if (cur !== ARC_ID) await window.ethereum.request({ method: 'wallet_switchEthereumChain', params:[{chainId:ARC_ID}] });
-  } catch(e) { showToast('Network switch failed ❌','❌'); return; }
-
-  showToast('Claim approve karein wallet mein... 🎁','🎁');
-  try {
-    const provider  = new ethers.providers.Web3Provider(window.ethereum);
-    const signer    = provider.getSigner();
-    const ARC_AGENT = '0xD628F82B8339e601529F76a9dF70C48E658cA882';
-    // Claim = 0.001 USDC symbolic tx to contract
-    const tx = await signer.sendTransaction({ to: ARC_AGENT, value: ethers.utils.parseUnits('0.001',18), gasLimit: ethers.utils.hexlify(60000) });
-    const receipt = await tx.wait();
-    showToast('✅ Rewards claimed! Block: ' + receipt.blockNumber,'✅');
-    fetchUSDCBalance();
-    setTimeout(()=>window.open('https://testnet.arcscan.app/tx/'+tx.hash,'_blank'),1000);
-  } catch(err) {
-    if(err.code===4001) showToast('Claim cancel ❌','❌');
-    else showToast('Claim failed: '+(err.reason||err.message||'Unknown')+' ❌','❌');
-  }
-};
-
-window.setWithdrawMax = function() {
-  const el = document.getElementById('investWithdrawAmt');
-  if(el) el.value = (parseFloat(window.stakedBalance||window.usdcBalance||'0')).toFixed(4);
+window.switchInvestTab = function(tab) {
+  ['deposit','withdraw','claim'].forEach(function(t) {
+    var panel=document.getElementById('invest-panel-'+t);
+    var btn  =document.getElementById('itab-'+t);
+    if(panel) panel.style.display=(t===tab?'block':'none');
+    if(btn)   btn.classList.toggle('active',t===tab);
+  });
 };
 </script>
 
 </body>
 </html>
 
-<script>window.setInvestPct = function(pct){
-  try {
-    const el = document.getElementById('investDepositAmt') || document.getElementById('investWithdrawAmt') || document.querySelector('input[type="number"]');
-    if(!el) return;
-    const bal = parseFloat(window.usdcBalance || window.walletBalance || '0');
-    if(!bal || isNaN(bal)) { 
-      // fallback: just set percentage of 100 for demo
-      el.value = (pct).toFixed(2);
+<script>
+window.setInvestPct = function(pct){
+ try{
+   const el = document.querySelector('input[type="number"]') || document.getElementById('stakeAmount');
+   if(!el) return;
+   let max = 0;
+   const maxBtn = [...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='MAX');
+   if(maxBtn && maxBtn.onclick){
+      maxBtn.click();
       return;
-    }
-    el.value = ((bal * pct) / 100).toFixed(4);
-    el.dispatchEvent(new Event('input'));
-  } catch(e) { console.warn('setInvestPct error:', e); }
-};</script>
+   }
+   const balText = document.body.innerText.match(/Available USDC\s*([0-9,.]+)/i);
+   if(balText) max = parseFloat(balText[1].replace(/,/g,''))||0;
+   if(max>0) el.value = ((max*pct)/100).toFixed(2);
+ }
+ catch(e){console.error(e);}
+}
+</script>
