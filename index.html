@@ -1432,9 +1432,10 @@ function onWalletConnected(address, walletName) {
   // Update sidebar profile
   updateSidebarProfile(walletAddress, null, 0, '—');
   
-  // Fetch real data
-  fetchAllRealData();
-  fetchUSDCBalance();
+  // Fetch real data INSTANTLY on connect
+  fetchUSDCBalance();       // immediate native balance
+  fetchAllRealData();       // full data fetch
+  updatePortfolioPage();    // portfolio instant update
   
   // Auto-refresh balance every 30 seconds
   if (window._balanceTimer) clearInterval(window._balanceTimer);
@@ -1989,6 +1990,21 @@ function showPage(name) {
   if (name === 'profile') {
     setTimeout(() => initProfilePage(), 60);
   }
+  if (name === 'portfolio') {
+    updatePortfolioPage();           // instant — no delay
+    if (isConnected) { fetchUSDCBalance(); fetchAllRealData(); }
+  }
+  if (name === 'invest') {
+    setTimeout(() => {
+      // Set wallet balance in invest page instantly
+      const iwb = document.getElementById('investWalletBal');
+      if (iwb) iwb.textContent = (window.usdcBalance || '0.0000') + ' USDC';
+      // Set deposit input to 0 (not 100%)
+      const dep = document.getElementById('investDepositAmt');
+      if (dep && (!dep.value || dep.value === '0')) dep.value = '';
+      if (isConnected) fetchUSDCBalance();
+    }, 60);
+  }
   if (name === 'activity') {
     setTimeout(() => {
       if (isConnected || demoMode) {
@@ -2095,13 +2111,13 @@ function getPageHTML(name) {
     h += '<div id="dynamic-swap-box" style="display:none">';
     h += '<div class="transfer-row" style="margin-bottom:10px">';
     h += '<div class="transfer-field"><div class="field-label">SWAP FROM</div>';
-    h += '<select class="field-select" id="swapFromToken" onchange="updateSwapPreview()"><option>ETH</option><option>USDC</option></select>';
+    h += '<select class="field-select" id="swapFromToken" onchange="updateSwapPreview()"><option value="USDC" selected>USDC</option><option value="ETH">ETH</option><option value="ARC">ARCAgent (ARC)</option></select>';
     h += '</div><div class="transfer-field"><div class="field-label">AMOUNT</div>';
     h += '<input class="field-input" id="swapAmountInput" type="number" placeholder="0.00" value="1" oninput="updateSwapPreview()">';
     h += '</div></div>';
     h += '<div class="transfer-row">';
     h += '<div class="transfer-field"><div class="field-label">SWAP TO</div>';
-    h += '<select class="field-select" id="swapToToken" onchange="updateSwapPreview()"><option selected>USDC</option><option>ETH</option></select>';
+    h += '<select class="field-select" id="swapToToken" onchange="updateSwapPreview()"><option value="ETH" selected>ETH</option><option value="USDC">USDC</option><option value="ARC">ARCAgent (ARC)</option></select>';
     h += '</div><div class="transfer-field"><div class="field-label">YOU RECEIVE (EST.)</div>';
     h += '<input class="field-input" id="swapEstimatedOutput" type="text" readonly style="opacity:0.75">';
     h += '</div></div></div>';
@@ -2130,7 +2146,8 @@ function getPageHTML(name) {
     h += '<div class="stat-card"><div class="stat-icon">⚖</div><div class="stat-label">Network</div><div class="stat-val" style="font-size:13px">ARC</div><div class="stat-sub up">Testnet</div></div>';
     h += '</div>';
     h += '<div class="card action-card"><div class="section-title">Holdings</div>';
-    h += '<div id="portfolioHoldings"><div style="color:var(--muted2);font-size:12px;padding:20px 0;text-align:center">Connect wallet to view portfolio</div></div></div>';
+    h += '<div id="portfolioHoldings"><div style="color:var(--muted2);font-size:12px;padding:20px 0;text-align:center" id="portLoadingMsg">Loading portfolio...</div></div></div>';
+    h += '<div class="card action-card" style="margin-top:12px"><div class="section-title">Wallet Overview</div><div id="walletOverviewList"></div></div>';
     return h;
   }
 
@@ -2164,7 +2181,7 @@ function getPageHTML(name) {
     h += '<div style="margin-bottom:12px">';
     h += '<div class="field-label" style="margin-bottom:6px">AMOUNT TO STAKE (USDC)</div>';
     h += '<div style="display:flex;gap:8px">';
-    h += '<input class="field-input" id="investDepositAmt" type="number" placeholder="0.00" min="0.01" step="0.01" style="flex:1" oninput="updateDepositPreview()">';
+    h += '<input class="field-input" id="investDepositAmt" type="number" placeholder="0.00" value="" min="0.01" step="0.01" style="flex:1" oninput="updateDepositPreview()">';
     h += '<button onclick="setInvestMax()" style="background:var(--glass);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:11px;font-weight:700;cursor:pointer;color:var(--neon4);white-space:nowrap">MAX</button>';
     h += '</div>';
     h += '</div>';
@@ -2512,30 +2529,33 @@ function updatePreview() {
 }
 
 // Swap preview with mock ETH price
-async function updateSwapPreview() {
-  const fromTok = document.getElementById('swapFromToken')?.value || 'ETH';
-  const toTok = document.getElementById('swapToToken')?.value || 'USDC';
-  const amt = parseFloat(document.getElementById('swapAmountInput')?.value || '1');
-  const out = document.getElementById('swapEstimatedOutput');
-  if (!out) return;
-  
-  // Use approximate price for preview
-  const ETH_PRICE = 2600;
-  let estimated = 0;
-  if (fromTok === 'ETH' && toTok === 'USDC') estimated = (amt * ETH_PRICE * 0.997).toFixed(2);
-  else if (fromTok === 'USDC' && toTok === 'ETH') estimated = (amt / ETH_PRICE * 0.997).toFixed(6);
-  else estimated = (amt * 0.997).toFixed(4);
-  
-  out.value = '~' + estimated + ' ' + toTok;
-  
-  const txPreview = document.getElementById('txPreview');
-  if (txPreview) {
-    const previewRoute = document.getElementById('preview-route');
-    const previewReceive = document.getElementById('preview-receive');
-    if (previewRoute) previewRoute.textContent = 'ARC DEX · ' + fromTok + ' → ' + toTok;
-    if (previewReceive) previewReceive.textContent = '~' + estimated + ' ' + toTok;
-    txPreview.style.display = 'block';
-  }
+function updateSwapPreview() {
+  const fromTok = document.getElementById('swapFromToken')?.value || 'USDC';
+  const toTok   = document.getElementById('swapToToken')?.value   || 'ETH';
+  const amt     = parseFloat(document.getElementById('swapAmountInput')?.value || '0');
+  const outEl   = document.getElementById('swapEstimatedOutput');
+
+  // Swap rate estimates
+  let rate = 1;
+  if (fromTok==='USDC' && toTok==='ETH')  rate = 0.000383;
+  if (fromTok==='ETH'  && toTok==='USDC') rate = 2610;
+  if (fromTok==='USDC' && toTok==='ARC')  rate = 100;    // 1 USDC = 100 ARC token
+  if (fromTok==='ARC'  && toTok==='USDC') rate = 0.01;   // 1 ARC = 0.01 USDC
+  if (fromTok==='ETH'  && toTok==='ARC')  rate = 261000;
+  if (fromTok==='ARC'  && toTok==='ETH')  rate = 0.0000038;
+
+  const out = (amt * rate).toFixed(6);
+  if (outEl) outEl.value = amt > 0 ? out + ' ' + toTok : '';
+
+  // Update route display
+  const routeEl = document.querySelector('.tx-preview-row span:last-child, [id*="route"]');
+  // Update preview rows
+  const rows = document.querySelectorAll('.preview-val, .tx-val');
+  rows.forEach(el => {
+    if (el.id === 'previewRoute' || el.textContent.includes('via ARC')) {
+      el.textContent = 'ARC Testnet · '+fromTok+' → '+toTok;
+    }
+  });
 }
 
 async function executeTransfer() {
@@ -2621,31 +2641,51 @@ async function executeTransfer() {
 // ═══════════════════════════════════════════════════════
 async function executeSwap() {
   if (!isConnected || demoMode) { openWalletModal(); return; }
-  const fromTok = document.getElementById('swapFromToken')?.value || 'USDC';
-  const toTok   = document.getElementById('swapToToken')?.value   || 'ETH';
-  const amountEl= document.getElementById('swapAmountInput');
-  const amount  = amountEl ? amountEl.value.trim() : '';
+  const fromTok  = document.getElementById('swapFromToken')?.value || 'USDC';
+  const toTok    = document.getElementById('swapToToken')?.value   || 'ETH';
+  const amountEl = document.getElementById('swapAmountInput');
+  const amount   = amountEl ? amountEl.value.trim() : '';
   if (!amount || parseFloat(amount)<=0) { showToast('Amount enter karein ⚠️','⚠️'); return; }
-  const ARC_ID='0x4cef52';
+  if (fromTok === toTok) { showToast('Same token swap nahi hota ⚠️','⚠️'); return; }
+
+  const ARC_ID = '0x4cef52';
   try {
-    const cur=await window.ethereum.request({method:'eth_chainId'});
-    if(cur!==ARC_ID) await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:ARC_ID}]});
+    const cur = await window.ethereum.request({method:'eth_chainId'});
+    if (cur!==ARC_ID) await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:ARC_ID}]});
   } catch(e) { showToast('Network switch failed ❌','❌'); return; }
+
   showToast('Swap approve karein wallet mein... 🔄','🔄');
   try {
-    const provider=new ethers.providers.Web3Provider(window.ethereum);
-    const signer=provider.getSigner();
-    const ARC_AGENT='0xD628F82B8339e601529F76a9dF70C48E658cA882';
-    const amtParsed=ethers.utils.parseUnits(amount,18);
-    // Native USDC → ARCAgent contract = real contract tx in wallet
-    const tx=await signer.sendTransaction({to:ARC_AGENT,value:amtParsed,gasLimit:ethers.utils.hexlify(80000)});
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const signer   = provider.getSigner();
+    const ARC_AGENT= '0xD628F82B8339e601529F76a9dF70C48E658cA882';
+
+    let tx;
+    if (toTok === 'ARC' || fromTok === 'ARC') {
+      // ARC token swap — ERC-20 contract interaction (shows as Contract in wallet)
+      const ERC20_ABI = [
+        'function transfer(address to, uint256 amount) returns (bool)',
+        'function decimals() view returns (uint8)'
+      ];
+      const arcContract = new ethers.Contract(ARC_AGENT, ERC20_ABI, signer);
+      const dec = await arcContract.decimals();
+      const amtParsed = ethers.utils.parseUnits(amount, dec);
+      showToast('ARC token swap bheja ja raha hai... ⏳','⏳');
+      tx = await arcContract.transfer(walletAddress, amtParsed);
+    } else {
+      // USDC ↔ ETH — native USDC to ARCAgent contract
+      const amtParsed = ethers.utils.parseUnits(amount, 18);
+      showToast('Transaction bheja ja raha hai... ⏳','⏳');
+      tx = await signer.sendTransaction({to:ARC_AGENT, value:amtParsed, gasLimit:ethers.utils.hexlify(80000)});
+    }
+
     showToast('Swap submitted! '+tx.hash.slice(0,10)+'... 🚀','🚀');
-    const receipt=await tx.wait();
+    const receipt = await tx.wait();
     showToast('✅ Swap confirmed! '+amount+' '+fromTok+' → '+toTok+' | Block:'+receipt.blockNumber,'✅');
     fetchUSDCBalance(); fetchAllRealData();
     setTimeout(()=>window.open('https://testnet.arcscan.app/tx/'+tx.hash,'_blank'),1000);
   } catch(err) {
-    if(err.code===4001) showToast('Swap cancel ❌','❌');
+    if (err.code===4001) showToast('Swap cancel ❌','❌');
     else showToast('Swap failed: '+(err.reason||err.message||'Unknown')+' ❌','❌');
   }
 }
@@ -3209,6 +3249,66 @@ window.switchInvestTab = function(tab) {
     if(btn)   btn.classList.toggle('active',t===tab);
   });
 };
+// ══════════════════════════════════════
+// PORTFOLIO PAGE UPDATE
+// ══════════════════════════════════════
+function updatePortfolioPage() {
+  const holdingsEl = document.getElementById('portfolioHoldings');
+  const loadMsg    = document.getElementById('portLoadingMsg');
+
+  if (!isConnected && !demoMode) {
+    if (holdingsEl) holdingsEl.innerHTML = '<div style="color:var(--muted2);font-size:12px;padding:20px 0;text-align:center">Connect wallet to view portfolio</div>';
+    return;
+  }
+
+  const usdcBal  = window.usdcBalance  || '0.0000';
+  const arcBal   = window.arcTokenBalance || '0.0000';
+  const addr     = walletAddress || '';
+  const short    = addr ? addr.slice(0,6)+'...'+addr.slice(-4) : '—';
+  const totalUSD = parseFloat(usdcBal).toFixed(2);
+
+  // Update stat cards
+  const portTotalEl = document.getElementById('portTotal');
+  if (portTotalEl) portTotalEl.textContent = '$'+totalUSD;
+  const portUsdcEl = document.getElementById('portUsdc');
+  if (portUsdcEl) portUsdcEl.textContent = usdcBal+' USDC';
+
+  // Holdings list
+  if (holdingsEl) {
+    holdingsEl.innerHTML = `
+      <div class="wallet-item" style="margin-bottom:8px">
+        <div class="chain-icon" style="background:rgba(16,185,129,0.15);border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center">💵</div>
+        <div style="flex:1;margin-left:12px">
+          <div style="font-weight:600;font-size:13px">USDC</div>
+          <div style="font-size:11px;color:var(--muted2)">Native · ARC Testnet · ${short}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-weight:700;color:var(--neon4)">${usdcBal}</div>
+          <div style="font-size:11px;color:var(--muted2)">≈ $${totalUSD}</div>
+        </div>
+      </div>
+      <div class="wallet-item">
+        <div class="chain-icon" style="background:rgba(139,92,246,0.15);border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center">🪙</div>
+        <div style="flex:1;margin-left:12px">
+          <div style="font-weight:600;font-size:13px">ARCAgent Token</div>
+          <div style="font-size:11px;color:var(--muted2)">ERC-20 · 0xD628F82B...Ca882</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-weight:700;color:var(--neon2)">${arcBal}</div>
+          <div style="font-size:11px;color:var(--muted2)">ARC Testnet</div>
+        </div>
+      </div>`;
+  }
+
+  // Wallet overview section
+  updateWalletOverview(usdcBal, addr);
+
+  // Also fetch fresh data
+  if (isConnected && addr) {
+    fetchUSDCBalance();
+    fetchAllRealData();
+  }
+}
 </script>
 
 </body>
