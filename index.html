@@ -2199,7 +2199,7 @@ function getPageHTML(name) {
     h += '<button onclick="setInvestPct(75)" type="button" style="background:var(--glass); border:1px solid var(--border); border-radius:8px; padding:6px 2px; font-size:11px; font-weight:700; color:var(--neon4); cursor:pointer; font-family:JetBrains Mono,monospace; text-align:center; display:block; width:100%;">75%</button>';
     
     // 100% Button
-    h += '<button onclick="setInvestPct(100)" type="button" style="background:linear-gradient(135deg,rgba(6,182,212,0.15),rgba(16,185,129,0.15)); border:1px solid #06b6d4; border-radius:8px; padding:6px 2px; font-size:11px; font-weight:800; color:#06b6d4; cursor:pointer; font-family:JetBrains Mono,monospace; text-align:center; display:block; width:100%;">100%</button>';
+    h += '<button onclick="setInvestPct(100)" type="button" style="background:var(--glass); border:1px solid var(--border); border-radius:8px; padding:6px 2px; font-size:11px; font-weight:700; color:var(--neon4); cursor:pointer; font-family:JetBrains Mono,monospace; text-align:center; display:block; width:100%;">100%</button>';
     
     h += '</div>';
     // UPDATED: Button ko flex container mein daal kar chota (max-width: 240px) aur center kiya gaya hai
@@ -2952,81 +2952,110 @@ async function _protoScanAPI(params) {
 }
 
 async function fetchProtocolStatsPage() {
-  const USDC_CA = '0xD628F82B8339e601529F76a9dF70C48E658cA882';
+  const ARC_AGENT = '0xD628F82B8339e601529F76a9dF70C48E658cA882';
+  const myAddr    = walletAddress || null;
   const setEl = (id, val) => { const e=document.getElementById(id); if(e) e.textContent=val; };
 
   try {
-    // 1. Block + gas
+    // 1. Block + gas price
     const [blockHex, gasPriceHex] = await Promise.all([
       _protoRPC('eth_blockNumber', []),
       _protoRPC('eth_gasPrice', [])
     ]);
     const latestBlock = blockHex ? parseInt(blockHex,16) : null;
     const gasGwei = gasPriceHex ? (parseInt(gasPriceHex,16)/1e9).toFixed(4) : '—';
-    if(latestBlock) {
+    if (latestBlock) {
       setEl('protoBlock', latestBlock.toLocaleString());
       const [b1, b2] = await Promise.all([
         _protoRPC('eth_getBlockByNumber', ['0x'+latestBlock.toString(16), false]),
         _protoRPC('eth_getBlockByNumber', ['0x'+(latestBlock-10).toString(16), false])
       ]);
-      if(b1 && b2) {
+      if (b1 && b2) {
         const diff = (parseInt(b1.timestamp,16) - parseInt(b2.timestamp,16)) / 10;
         setEl('protoBlockTime', diff.toFixed(1)+'s');
       }
     }
     setEl('protoGasPrice', gasGwei==='—' ? '—' : gasGwei+' Gwei');
+    setEl('protoChainStatus', '✓ Online');
 
-    // 2. Token transfers + normal txns
-    const [tokenTxns, normalTxns] = await Promise.all([
-      _protoScanAPI({module:'account',action:'tokentx',contractaddress:USDC_CA,page:'1',offset:'1000',sort:'desc'}),
-      _protoScanAPI({module:'account',action:'txlist',address:USDC_CA,page:'1',offset:'1000',sort:'desc'})
-    ]);
+    // 2. Fetch ALL transactions — wallet address + ARCAgent contract txns
+    const BASE = 'https://testnet.arcscan.app/api';
+    const fetches = [
+      // ARCAgent token transfer events (all users)
+      fetch(`${BASE}?module=account&action=tokentx&contractaddress=${ARC_AGENT}&page=1&offset=1000&sort=desc`).then(r=>r.json()).catch(()=>({status:'0'})),
+      // Normal txns to/from ARCAgent contract
+      fetch(`${BASE}?module=account&action=txlist&address=${ARC_AGENT}&page=1&offset=1000&sort=desc`).then(r=>r.json()).catch(()=>({status:'0'})),
+    ];
+    // If wallet connected — also fetch wallet's own txns
+    if (myAddr) {
+      fetches.push(
+        fetch(`${BASE}?module=account&action=txlist&address=${myAddr}&page=1&offset=1000&sort=desc`).then(r=>r.json()).catch(()=>({status:'0'})),
+        fetch(`${BASE}?module=account&action=tokentx&contractaddress=${ARC_AGENT}&address=${myAddr}&page=1&offset=1000&sort=desc`).then(r=>r.json()).catch(()=>({status:'0'}))
+      );
+    }
 
-    // Unique addresses
+    const results = await Promise.all(fetches);
+    const tokenTxns  = results[0]?.status==='1' ? (results[0].result||[]) : [];
+    const normalTxns = results[1]?.status==='1' ? (results[1].result||[]) : [];
+    const myNormal   = results[2]?.status==='1' ? (results[2].result||[]) : [];
+    const myToken    = results[3]?.status==='1' ? (results[3].result||[]) : [];
+
+    // Merge + deduplicate all txns
+    const seen = new Set();
+    const allTxns = [...tokenTxns, ...normalTxns, ...myNormal, ...myToken].filter(t => {
+      if (!t.hash || seen.has(t.hash)) return false;
+      seen.add(t.hash); return true;
+    });
+
+    // Unique addresses (exclude contract itself)
     const uniqueAddrs = new Set();
-    [...(normalTxns||[]), ...(tokenTxns||[])].forEach(t => {
-      if(t.from) uniqueAddrs.add(t.from.toLowerCase());
-      if(t.to)   uniqueAddrs.add(t.to.toLowerCase());
+    allTxns.forEach(t => {
+      if (t.from && t.from.toLowerCase() !== ARC_AGENT.toLowerCase()) uniqueAddrs.add(t.from.toLowerCase());
+      if (t.to   && t.to.toLowerCase()   !== ARC_AGENT.toLowerCase()) uniqueAddrs.add(t.to.toLowerCase());
     });
-    uniqueAddrs.delete(USDC_CA.toLowerCase());
-    const userCount = uniqueAddrs.size;
-    const totalTxns = (normalTxns||[]).length + (tokenTxns||[]).length;
+    const userCount = Math.max(uniqueAddrs.size, myAddr ? 1 : 0);
+    const totalTxns = allTxns.length;
 
-    // Classify volumes
-    let bridgeVol=0, swapVol=0, sendVol=0, bridgeCount=0, swapCount=0, sendCount=0;
-    (tokenTxns||[]).forEach(t => {
-      const val = parseInt(t.value||0), rawUSD = val/1e6;
-      if(rawUSD >= 50)  { bridgeVol+=val; bridgeCount++; }
-      else if(rawUSD>=1){ swapVol+=val;   swapCount++;   }
-      else              { sendVol+=val;   sendCount++;   }
+    // Classify by input data + value (ARC native = 1e18 decimals)
+    let bridgeVol=0, swapVol=0, sendVol=0;
+    let bridgeCount=0, swapCount=0, sendCount=0;
+    allTxns.forEach(t => {
+      const val    = parseInt(t.value||'0');
+      const valUSD = val / 1e18;  // ARC native USDC = 18 decimals
+      const input  = t.input || t.data || '';
+      const isContract = input.length > 10 && input !== '0x';
+
+      if (isContract && valUSD >= 10) { bridgeVol += val; bridgeCount++; }
+      else if (isContract)             { swapVol   += val; swapCount++;   }
+      else if (valUSD > 0)             { sendVol   += val; sendCount++;   }
     });
-    const otherCount = Math.max(0, (normalTxns||[]).length - bridgeCount - swapCount - sendCount);
+    const otherCount = Math.max(0, totalTxns - bridgeCount - swapCount - sendCount);
     const totalClassified = bridgeCount + swapCount + sendCount + otherCount || 1;
 
     // Active today
     const oneDayAgo = Math.floor(Date.now()/1000) - 86400;
     const todayAddrs = new Set();
-    (tokenTxns||[]).filter(t=>parseInt(t.timeStamp)>oneDayAgo).forEach(t => {
-      if(t.from) todayAddrs.add(t.from.toLowerCase());
-    });
+    allTxns.filter(t => parseInt(t.timeStamp||0) > oneDayAgo)
+           .forEach(t => { if(t.from) todayAddrs.add(t.from.toLowerCase()); });
 
-    // Total supply
-    const tsHex = await _protoRPC('eth_call', [{to:USDC_CA, data:'0x18160ddd'}, 'latest']);
-    const totalSupply = tsHex ? parseInt(tsHex,16) : null;
+    // Total supply of ARCAgent token
+    const tsHex = await _protoRPC('eth_call', [{to:ARC_AGENT, data:'0x18160ddd'}, 'latest']);
+    const totalSupply = tsHex && tsHex !== '0x' ? parseInt(tsHex,16) : null;
 
-    // ── DOM updates ──
-    setEl('protoUsers',          _fmtNum(userCount));
-    setEl('protoUsersChange',    userCount+' unique addresses on-chain');
-    setEl('protoTotalTxns',      _fmtNum(totalTxns));
+    // ── DOM Updates ──
+    setEl('protoUsers',           _fmtNum(userCount));
+    setEl('protoUsersChange',     userCount+' unique addresses on-chain');
+    setEl('protoTotalTxns',       _fmtNum(totalTxns));
     setEl('protoTotalTxnsChange', totalTxns+' total on ARC Testnet');
-    setEl('protoBridgeVol',      _fmtUSDC(bridgeVol));
-    setEl('protoBridgeChange',   bridgeCount+' bridge transactions');
-    setEl('protoSwapVol',        _fmtUSDC(swapVol));
-    setEl('protoSwapChange',     swapCount+' swap transactions');
-    setEl('protoSendVol',        _fmtUSDC(sendVol));
-    setEl('protoSendChange',     sendCount+' send transactions');
-    setEl('protoActiveToday',    todayAddrs.size || '—');
-    setEl('protoTotalSupply',    totalSupply ? _fmtUSDC(totalSupply) : '—');
+    setEl('protoBridgeVol',       _fmtUSDC(bridgeVol));
+    setEl('protoBridgeChange',    bridgeCount+' bridge transactions');
+    setEl('protoSwapVol',         _fmtUSDC(swapVol));
+    setEl('protoSwapChange',      swapCount+' swap transactions');
+    setEl('protoSendVol',         _fmtUSDC(sendVol));
+    setEl('protoSendChange',      sendCount+' send transactions');
+    setEl('protoActiveToday',     todayAddrs.size || '—');
+    setEl('protoTotalSupply',     totalSupply ? _fmtUSDC(totalSupply) : '—');
+    setEl('protoChainStatus',     '✓ Online');
 
     // Breakdown bar
     const pcts = {
@@ -3045,49 +3074,55 @@ async function fetchProtocolStatsPage() {
     // Sparklines
     _pushSpark(_sparkBuf.users,  userCount);
     _pushSpark(_sparkBuf.txns,   totalTxns);
-    _pushSpark(_sparkBuf.bridge, bridgeVol/1e6);
-    _pushSpark(_sparkBuf.swap,   swapVol/1e6);
-    _pushSpark(_sparkBuf.send,   sendVol/1e6);
+    _pushSpark(_sparkBuf.bridge, bridgeVol/1e18);
+    _pushSpark(_sparkBuf.swap,   swapVol/1e18);
+    _pushSpark(_sparkBuf.send,   sendVol/1e18);
     _drawSpark('sparkUsers',  _sparkBuf.users,  'rgba(167,139,250,0.8)');
     _drawSpark('sparkTxns',   _sparkBuf.txns,   'rgba(16,185,129,0.8)');
     _drawSpark('sparkBridge', _sparkBuf.bridge, 'rgba(6,182,212,0.8)');
     _drawSpark('sparkSwap',   _sparkBuf.swap,   'rgba(245,158,11,0.8)');
     _drawSpark('sparkSend',   _sparkBuf.send,   'rgba(99,102,241,0.8)');
 
-    // Leaderboard
+    // Leaderboard — top wallets by tx count
     const addrTxCount = {};
-    (tokenTxns||[]).forEach(t => {
-      if(t.from && t.from.toLowerCase()!==USDC_CA.toLowerCase()) {
+    allTxns.forEach(t => {
+      if (t.from && t.from.toLowerCase() !== ARC_AGENT.toLowerCase()) {
         const a = t.from.toLowerCase();
-        addrTxCount[a] = (addrTxCount[a]||0)+1;
+        addrTxCount[a] = (addrTxCount[a]||0) + 1;
       }
     });
     const sorted = Object.entries(addrTxCount).sort((a,b)=>b[1]-a[1]).slice(0,5);
     const rankClass = ['gold','silver','bronze','',''];
     const rankLabel = ['🥇','🥈','🥉','4','5'];
     const lbEl = document.getElementById('protoLeaderboard');
-    if(lbEl) {
+    if (lbEl) {
       lbEl.innerHTML = sorted.length===0
         ? '<div style="color:var(--muted2);font-size:11px;text-align:center;padding:8px">No data yet</div>'
-        : sorted.map(([addr,cnt],i) => `<div class="proto-lb-item"><span class="proto-lb-rank ${rankClass[i]}">${rankLabel[i]}</span><span class="proto-lb-addr">${addr.slice(0,6)}…${addr.slice(-4)}</span><span class="proto-lb-count">${cnt} txns</span></div>`).join('');
+        : sorted.map(([addr,cnt],i) =>
+            `<div class="proto-lb-item">
+              <span class="proto-lb-rank ${rankClass[i]}">${rankLabel[i]}</span>
+              <span class="proto-lb-addr">${addr.slice(0,6)}…${addr.slice(-4)}</span>
+              <span class="proto-lb-count">${cnt} txns</span>
+            </div>`
+          ).join('');
     }
 
     // Timestamp
     const upEl = document.getElementById('protoLastUpdated');
-    if(upEl) upEl.textContent = 'Updated '+new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    if (upEl) upEl.textContent = 'Updated '+new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
 
-    // Schedule next auto-refresh only while stats page is open
-    if(_protoStatsTimer) clearTimeout(_protoStatsTimer);
-    if(currentPage === 'stats') {
+    // Auto-refresh every 30s while on stats page
+    if (_protoStatsTimer) clearTimeout(_protoStatsTimer);
+    if (currentPage === 'stats') {
       _protoStatsTimer = setTimeout(fetchProtocolStatsPage, 30000);
     }
 
   } catch(e) {
     console.warn('[ProtoStats] error', e);
     const upEl = document.getElementById('protoLastUpdated');
-    if(upEl) upEl.textContent = 'Fetch error — retrying…';
-    if(_protoStatsTimer) clearTimeout(_protoStatsTimer);
-    if(currentPage === 'stats') _protoStatsTimer = setTimeout(fetchProtocolStatsPage, 15000);
+    if (upEl) upEl.textContent = 'Fetch error — retrying…';
+    if (_protoStatsTimer) clearTimeout(_protoStatsTimer);
+    if (currentPage === 'stats') _protoStatsTimer = setTimeout(fetchProtocolStatsPage, 15000);
   }
 }
 
