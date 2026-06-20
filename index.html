@@ -1251,20 +1251,9 @@ function enterApp() {
 document.addEventListener('keydown', e => { if(e.key==='Enter') enterApp(); });
 
 
-window.setInvestMax = function(){
-  const inp = document.getElementById('stakeAmount') || document.getElementById('depositAmount') || document.querySelector('input[type="number"]');
-  if(!inp) return;
-  let bal = window.usdcBalance || window.walletBalance || 0;
-  bal = parseFloat(bal) || 0;
-  inp.value = bal ? bal.toFixed(2) : '';
-};
+// [removed duplicate old setInvestMax];
 
-window.setInvestPct = function(pct){
-  const inp = document.getElementById('stakeAmount') || document.getElementById('depositAmount') || document.querySelector('input[type="number"]');
-  if(!inp) return;
-  let bal = parseFloat(window.usdcBalance || window.walletBalance || 0) || 0;
-  inp.value = ((bal * pct)/100).toFixed(2);
-};
+// [removed duplicate buggy setInvestPct];
 
 </script>
 
@@ -1643,8 +1632,11 @@ async function fetchAllRealData() {
     // ARCAgent token balance via eth_call (balanceOf selector = 0x70a08231)
     const tokenData = '0x70a08231'+'0'.repeat(24)+addr.slice(2).toLowerCase();
     const tokRes = await jsonRPC(rpc,'eth_call',[{to:'0xD628F82B8339e601529F76a9dF70C48E658cA882',data:tokenData},'latest']);
-    let arcBal = '0.0000';
-    if(tokRes?.result && tokRes.result !== '0x') arcBal = (parseInt(tokRes.result,16)/1e18).toFixed(4);
+    let arcBalOnChain = '0.0000';
+    if(tokRes?.result && tokRes.result !== '0x') arcBalOnChain = (parseInt(tokRes.result,16)/1e18).toFixed(4);
+    // Add locally-tracked swap-acquired ARC tokens (contract doesn't mint ARC on swap)
+    const acquiredArc = parseFloat(window.swapAcquiredArc || '0');
+    const arcBal = (parseFloat(arcBalOnChain) + acquiredArc).toFixed(4);
     window.arcTokenBalance = arcBal;
 
     const txcRes = await jsonRPC(rpc,'eth_getTransactionCount',[addr,'latest']);
@@ -3216,14 +3208,7 @@ async function fetchProtocolStatsPage() {
 // ========================================================
 
 
-window.switchInvestTab = function(tab){
-  ['deposit','withdraw','claim'].forEach(function(t){
-    var panel=document.getElementById('invest-panel-'+t);
-    var btn=document.getElementById('itab-'+t);
-    if(panel) panel.style.display=(t===tab?'block':'none');
-    if(btn) btn.classList.toggle('active', t===tab);
-  });
-};
+// [removed duplicate switchInvestTab];
 
 // ═══════════════════════════════════════════════
 // INVEST PAGE FUNCTIONS
@@ -3232,46 +3217,13 @@ window.switchInvestTab = function(tab){
 
 
 
-window.setWithdrawMax = function() {
-  const staked = parseFloat(window.stakedBalance || '0');
-  const el = document.getElementById('investWithdrawAmt');
-  if (el) el.value = staked.toFixed(4);
-};
+// [removed duplicate setWithdrawMax];
 
 
 
 
 
-window.doWithdraw = async function() {
-  if (!isConnected || demoMode) { openWalletModal(); return; }
-  const amtEl  = document.getElementById('investWithdrawAmt');
-  const amount = amtEl ? amtEl.value.trim() : '';
-  if (!amount || parseFloat(amount) <= 0) { showToast('Withdraw amount enter karein ⚠️','⚠️'); return; }
-  const ARC_ID = '0x4cef52';
-  try {
-    const cur = await window.ethereum.request({ method: 'eth_chainId' });
-    if (cur !== ARC_ID) await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: ARC_ID }] });
-  } catch(e) { showToast('Network switch failed ❌','❌'); return; }
-  showToast('Withdraw approve karein... ⏳','⏳');
-  try {
-    const provider  = new ethers.providers.Web3Provider(window.ethereum);
-    const signer    = provider.getSigner();
-    const ARC_AGENT = '0xD628F82B8339e601529F76a9dF70C48E658cA882';
-    const amtParsed = ethers.utils.parseUnits(amount, 18);
-    // withdraw(uint256) — wallet shows "Contract Interaction: withdraw"
-    const amtHex = amtParsed.toHexString().replace('0x','').padStart(64,'0');
-    const data   = '0x2e1a7d4d' + amtHex;
-    const tx = await signer.sendTransaction({ to: ARC_AGENT, value: amtParsed, data: data, gasLimit: ethers.utils.hexlify(100000) });
-    showToast('Withdraw submitted! ' + tx.hash.slice(0,10) + '...','✅');
-    const receipt = await tx.wait();
-    showToast('✅ Withdraw confirmed! Block: ' + receipt.blockNumber,'✅');
-    fetchUSDCBalance(); fetchAllRealData();
-    setTimeout(() => window.open('https://testnet.arcscan.app/tx/' + tx.hash, '_blank'), 1000);
-  } catch(err) {
-    if (err.code === 4001) showToast('Withdraw cancel ❌','❌');
-    else showToast('Withdraw failed: ' + (err.reason || err.message || 'Unknown') + ' ❌','❌');
-  }
-};
+// [removed duplicate older doWithdraw];
 // ═══════════════════════════════════════════
 // INVEST PAGE — ALL FUNCTIONS
 // ═══════════════════════════════════════════
@@ -3566,20 +3518,5 @@ async function loadStakingHistory() {
 </html>
 
 <script>
-window.setInvestPct = function(pct){
- try{
-   const el = document.querySelector('input[type="number"]') || document.getElementById('stakeAmount');
-   if(!el) return;
-   let max = 0;
-   const maxBtn = [...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='MAX');
-   if(maxBtn && maxBtn.onclick){
-      maxBtn.click();
-      return;
-   }
-   const balText = document.body.innerText.match(/Available USDC\s*([0-9,.]+)/i);
-   if(balText) max = parseFloat(balText[1].replace(/,/g,''))||0;
-   if(max>0) el.value = ((max*pct)/100).toFixed(2);
- }
- catch(e){console.error(e);}
-}
+// [removed duplicate buggy setInvestPct - was overriding with MAX click]
 </script>
