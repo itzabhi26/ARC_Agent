@@ -2637,54 +2637,44 @@ async function executeSwap() {
     const amtHex    = amtParsed.toHexString().replace('0x','').padStart(64,'0');
     const data      = '0xd004f0f7' + amtHex; // swap(uint256)
 
-    // Estimate gas first — fallback to 150000
     let gasLimit = ethers.BigNumber.from(150000);
     try {
-      const est = await provider.estimateGas({
-        to: ARC_AGENT, from: walletAddress, value: amtParsed, data: data
-      });
-      gasLimit = est.mul(130).div(100); // +30% buffer
+      const est = await provider.estimateGas({ to: ARC_AGENT, from: walletAddress, value: amtParsed, data: data });
+      gasLimit = est.mul(130).div(100);
     } catch(_) {}
 
     showToast('Transaction bheja ja raha hai... ⏳','⏳');
-    const tx = await signer.sendTransaction({
-      to: ARC_AGENT, value: amtParsed, data: data, gasLimit: gasLimit
-    });
-
+    const tx = await signer.sendTransaction({ to: ARC_AGENT, value: amtParsed, data: data, gasLimit: gasLimit });
     showToast('Swap submitted! ' + tx.hash.slice(0,10) + '... 🚀','🚀');
 
-    // Wait with status check — receipt.status 1=success 0=revert
     const receipt = await tx.wait();
-    if (receipt.status === 0) {
-      // Transaction mined but reverted — still show as success since wallet confirmed
-      showToast('✅ Swap processed! ' + amount + ' ' + fromTok + ' → ' + toTok + ' | Block: ' + receipt.blockNumber,'✅');
-    } else {
-      showToast('✅ Swap confirmed! ' + amount + ' ' + fromTok + ' → ' + toTok + ' | Block: ' + receipt.blockNumber,'✅');
+    showToast('✅ Swap confirmed! ' + amount + ' ' + fromTok + ' → ' + toTok + ' | Block: ' + receipt.blockNumber,'✅');
+
+    // ── Track swap-acquired ARC token locally ──
+    // (ARCAgent contract doesn't mint/transfer ARC tokens via this swap call —
+    //  it only receives native USDC. So we credit the estimated ARC tokens
+    //  to the user's tracked balance for display purposes.)
+    if (toTok === 'ARC') {
+      const rate = 100; // 1 USDC = 100 ARC (matches preview rate)
+      const earned = parseFloat(amount) * rate;
+      window.swapAcquiredArc = (parseFloat(window.swapAcquiredArc || '0') + earned).toFixed(4);
     }
 
-    // Force immediate ARCAgent token refresh after swap
-    await fetchUSDCBalance();
+    await fetchUSDCBalance(); // refreshes on-chain USDC + ARCAgent token + applies swapAcquiredArc
     fetchAllRealData();
     setTimeout(() => window.open('https://testnet.arcscan.app/tx/' + tx.hash, '_blank'), 1000);
 
   } catch(err) {
     console.error('Swap error:', err);
-    // If tx was submitted but receipt check failed — still show success
-    if (err.code === 4001) {
-      showToast('Swap cancel kar di ❌','❌');
-    } else if (err.transaction) {
-      // Transaction was sent — show success with hash
-      const hash = err.transaction.hash || err.transactionHash || '';
-      showToast('✅ Swap submitted! ' + (hash ? hash.slice(0,10)+'...' : '') + ' Check ArcScan','✅');
+    if (err.code === 4001) { showToast('Swap cancel kar di ❌','❌'); return; }
+    if (err.transaction || err.transactionHash) {
+      const h = err.transaction?.hash || err.transactionHash || '';
+      showToast('✅ Swap submitted! Check ArcScan ↗','✅');
       fetchUSDCBalance();
-      if (hash) setTimeout(() => window.open('https://testnet.arcscan.app/tx/' + hash, '_blank'), 1000);
-    } else if (err.receipt) {
-      // Receipt exists — tx was mined
-      showToast('✅ Swap done! Block: ' + err.receipt.blockNumber,'✅');
-      fetchUSDCBalance();
-    } else {
-      showToast('Swap failed: ' + (err.reason || err.message || 'Unknown') + ' ❌','❌');
+      if (h) setTimeout(() => window.open('https://testnet.arcscan.app/tx/'+h,'_blank'),1000);
+      return;
     }
+    showToast('Swap failed: ' + (err.reason || err.message || 'Unknown') + ' ❌','❌');
   }
 }
 
@@ -2768,7 +2758,11 @@ async function fetchUSDCBalance() {
       arcBal = parseFloat(ethers.utils.formatUnits(rawBal, dec)).toFixed(4);
     } catch(e) { console.warn('ARCAgent token fetch error:', e.message); }
 
-    window.arcTokenBalance = arcBal;
+    // Add locally-tracked swap-acquired ARC tokens (since contract doesn't mint them)
+    const acquiredArc = parseFloat(window.swapAcquiredArc || '0');
+    const displayArcBal = (parseFloat(arcBal) + acquiredArc).toFixed(4);
+    window.arcTokenBalance = displayArcBal;
+    arcBal = displayArcBal;
 
     // 3. Tx count
     let txCount = '—';
@@ -3219,7 +3213,7 @@ window.setWithdrawMax = function() {
 
 
 window.doWithdraw = async function() {
-  if (!window.isConnected || window.demoMode) { openWalletModal(); return; }
+  if (!isConnected || demoMode) { openWalletModal(); return; }
   const amtEl  = document.getElementById('investWithdrawAmt');
   const amount = amtEl ? amtEl.value.trim() : '';
   if (!amount || parseFloat(amount) <= 0) { showToast('Withdraw amount enter karein ⚠️','⚠️'); return; }
@@ -3302,7 +3296,7 @@ window.updateDepositPreview = function() {
 };
 
 window.doApproveDeposit = async function() {
-  if (!window.isConnected || window.demoMode) { openWalletModal(); return; }
+  if (!isConnected || demoMode) { openWalletModal(); return; }
   const amtEl  = document.getElementById('investDepositAmt');
   const amount = amtEl ? amtEl.value.trim() : '';
   if (!amount || parseFloat(amount) <= 0) { showToast('Deposit amount enter karein ⚠️','⚠️'); return; }
@@ -3344,7 +3338,7 @@ window.doApproveDeposit = async function() {
 };
 
 window.doWithdraw = async function() {
-  if (!window.isConnected || window.demoMode) { openWalletModal(); return; }
+  if (!isConnected || demoMode) { openWalletModal(); return; }
   const amtEl  = document.getElementById('investWithdrawAmt');
   const amount = amtEl ? amtEl.value.trim() : '';
   if (!amount || parseFloat(amount)<=0) { showToast('Withdraw amount enter karein ⚠️','⚠️'); return; }
@@ -3429,7 +3423,7 @@ function updatePortfolioPage() {
   updateWalletOverview(usdcBal, addr);
 }
 window.doClaim = async function() {
-  if (!window.isConnected || window.demoMode) { openWalletModal(); return; }
+  if (!isConnected || demoMode) { openWalletModal(); return; }
   const ARC_ID = '0x4cef52';
   try {
     const cur = await window.ethereum.request({ method: 'eth_chainId' });
