@@ -1708,56 +1708,77 @@ function updateWalletOverview(usdcBalance, address) {
 }
 
 async function fetchRecentTransactions(addr) {
-  const BASE = 'https://testnet.arcscan.app/api';
-  
+  const BASE = 'https://testnet.arcscan.app/api/v2';
   try {
-    // Fetch normal txns
     const [txRes, tokenRes] = await Promise.allSettled([
-      fetch(`${BASE}?module=account&action=txlist&address=${addr}&startblock=0&endblock=99999999&page=1&offset=20&sort=desc`).then(r=>r.json()),
-      fetch(`${BASE}?module=account&action=tokentx&contractaddress=0xD628F82B8339e601529F76a9dF70C48E658cA882&address=${addr}&page=1&offset=20&sort=desc`).then(r=>r.json())
+      fetch(`${BASE}/addresses/${addr}/transactions?filter=to%7Cfrom`).then(r=>r.json()),
+      fetch(`${BASE}/addresses/${addr}/token-transfers`).then(r=>r.json())
     ]);
 
     let allTxns = [];
 
-    if (txRes.status === 'fulfilled' && txRes.value?.status === '1') {
-      allTxns = [...allTxns, ...(txRes.value.result || [])];
+    // Normal txns — Blockscout v2 format
+    if (txRes.status === 'fulfilled' && txRes.value?.items) {
+      const normal = txRes.value.items.map(t => ({
+        hash: t.hash,
+        from: t.from?.hash || '',
+        to: t.to?.hash || '',
+        value: t.value || '0',
+        timeStamp: t.timestamp ? Math.floor(new Date(t.timestamp).getTime()/1000).toString() : '0',
+        input: t.raw_input || t.method || '0x',
+        isError: t.status === 'error' ? '1' : '0',
+        _isToken: false
+      }));
+      allTxns = [...allTxns, ...normal];
     }
-    if (tokenRes.status === 'fulfilled' && tokenRes.value?.status === '1') {
-      const tokenTxns = (tokenRes.value.result || []).map(t => ({...t, _isToken: true, tokenSymbol: t.tokenSymbol || 'USDC'}));
+
+    // Token transfers — Blockscout v2 format
+    if (tokenRes.status === 'fulfilled' && tokenRes.value?.items) {
+      const tokenTxns = tokenRes.value.items.map(t => ({
+        hash: t.tx_hash || t.transaction_hash,
+        from: t.from?.hash || '',
+        to: t.to?.hash || '',
+        value: t.total?.value || '0',
+        timeStamp: t.timestamp ? Math.floor(new Date(t.timestamp).getTime()/1000).toString() : '0',
+        input: '0xa9059cbb',
+        tokenSymbol: t.token?.symbol || 'ARC',
+        _isToken: true
+      }));
       allTxns = [...allTxns, ...tokenTxns];
     }
 
-    // Deduplicate by hash, sort by time desc
+    // Deduplicate + sort
     const seen = new Set();
     allTxns = allTxns.filter(t => {
-      if(seen.has(t.hash)) return false;
-      seen.add(t.hash);
-      return true;
+      if (!t.hash || seen.has(t.hash)) return false;
+      seen.add(t.hash); return true;
     }).sort((a,b) => parseInt(b.timeStamp) - parseInt(a.timeStamp));
 
     if (allTxns.length > 0) {
       renderTransactionList(allTxns, addr, 'all');
-      // Also update activity page
       filterActivity('all');
       renderRecentActivitySidebar(allTxns.slice(0,3), addr);
-      // Update tx count in stats + portfolio
       const txCountEl = document.getElementById('statTxCount');
       if (txCountEl) txCountEl.textContent = allTxns.length;
       const portTxEl = document.getElementById('portTxCount');
       if (portTxEl) portTxEl.textContent = allTxns.length + ' txns';
+      window.allTxCache = allTxns;
     } else {
-      document.getElementById('recentActivityList').innerHTML = `
+      const ral = document.getElementById('recentActivityList');
+      if (ral) ral.innerHTML = `
         <div style="color:var(--muted2);font-size:12px;padding:10px 0;text-align:center">
+          No transactions yet on ARC Testnet.<br>
+          <span onclick="showPage('faucet')" style="color:var(--neon2);cursor:pointer">Get tokens →</span>
+        </div>`;
+      const actList = document.getElementById('activityTxList');
+      if (actList) actList.innerHTML = `
+        <div style="color:var(--muted2);font-size:12px;text-align:center;padding:20px 0">
           No transactions yet on ARC Testnet.<br>
           <span onclick="showPage('faucet')" style="color:var(--neon2);cursor:pointer">Get testnet tokens →</span>
         </div>`;
     }
-  } catch(e) {
-    console.warn('fetchRecentTransactions error:', e);
-    document.getElementById('recentActivityList').innerHTML = `
-      <div style="color:var(--muted2);font-size:12px;padding:10px 0;text-align:center">
-        <a href="https://testnet.arcscan.app/address/${addr}" target="_blank" style="color:var(--neon2)">View on ArcScan ↗</a>
-      </div>`;
+  } catch(err) {
+    console.warn('fetchRecentTransactions error:', err);
   }
 }
 
@@ -2132,7 +2153,7 @@ function getPageHTML(name) {
     h += '</div></div></div>';
     h += '<div class="transfer-field" id="recipient-row" style="margin-bottom:12px">';
     h += '<div class="field-label">RECIPIENT ADDRESS</div>';
-    h += '<input class="field-input" id="recipientInput" placeholder="0x... wallet address">';
+    h += '<input class="field-input" id="recipientInput" placeholder="0x... (optional - defaults to your wallet)">';
     h += '</div>';
     h += '<div class="tx-preview" id="txPreview" style="display:none">';
     h += '<div class="tx-row"><div class="tx-label">Route</div><div class="tx-val" id="preview-route">ARC Testnet</div></div>';
@@ -2182,7 +2203,7 @@ function getPageHTML(name) {
     h += '<div class="tabs" style="margin-bottom:16px">';
     h += '<div class="tab active" id="itab-deposit" onclick="switchInvestTab(\'deposit\')">Deposit</div>';
     h += '<div class="tab" id="itab-withdraw" onclick="switchInvestTab(\'withdraw\')">Withdraw</div>';
-    h += '<div class="tab" id="itab-claim" onclick="window.doClaim()">Claim Reward</div>';
+    h += '<div class="tab" id="itab-claim" onclick="window.switchInvestTab(\'claim\')">Claim Reward</div>';
     h += '</div>';
 
     // ── DEPOSIT panel ──
@@ -2248,7 +2269,7 @@ function getPageHTML(name) {
     h += '<div class="tx-row"><div class="tx-label">APY</div><div class="tx-val green">8.0%</div></div>';
     h += '<div class="tx-row"><div class="tx-label">Accruing</div><div class="tx-val green">~every second ⚡</div></div>';
     h += '</div>';
-    h += '<div style="display:flex;justify-content:center;width:100%;margin-top:10px;"><button class="btn-primary" onclick="window.doWithdraw()" style="max-width:240px;width:100%;background:linear-gradient(135deg,#10b981,#06b6d4);font-weight:700;">Claim</button></div>';
+    h += '<div style="display:flex;justify-content:center;width:100%;margin-top:10px;"><button class="btn-primary" onclick="window.doClaim()" style="max-width:240px;width:100%;background:linear-gradient(135deg,#10b981,#06b6d4);font-weight:700;">Claim</button></div>';
     h += '</div>';
 
     h += '</div>'; // /card
@@ -2687,43 +2708,55 @@ async function executeBridge() {
   const recipEl   = document.getElementById('recipientInput');
   const toChainEl = document.getElementById('toChain');
   const amount    = amountEl ? amountEl.value.trim() : '';
-  const recipient = recipEl && recipEl.value.trim().length === 42 ? recipEl.value.trim() : null;
+  // Recipient is OPTIONAL — defaults to own wallet (bridging to yourself on dest chain)
+  const recipInput = recipEl ? recipEl.value.trim() : '';
+  const recipient = (recipInput && recipInput.startsWith('0x') && recipInput.length === 42)
+                     ? recipInput : walletAddress;
   const toChain   = toChainEl ? toChainEl.value : 'Base Sepolia';
   if (!amount || parseFloat(amount) <= 0) { showToast('Amount enter karein ⚠️','⚠️'); return; }
-  if (!recipient) { showToast('Valid recipient address enter karein ⚠️','⚠️'); return; }
+
   const ARC_ID = '0x4cef52';
   try {
     const cur = await window.ethereum.request({ method: 'eth_chainId' });
     if (cur !== ARC_ID) await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: ARC_ID }] });
   } catch(e) { showToast('Network switch failed ❌','❌'); return; }
+
   showToast('Bridge approve karein... ⛓️','⛓️');
   try {
     const provider  = new ethers.providers.Web3Provider(window.ethereum);
     const signer    = provider.getSigner();
     const ARC_AGENT = '0xD628F82B8339e601529F76a9dF70C48E658cA882';
     const amtParsed = ethers.utils.parseUnits(amount, 18);
-    // Encode as bridge(uint256) — wallet shows "Contract Interaction: bridge"
-    const amtHex = amtParsed.toHexString().replace('0x','').padStart(64,'0');
-    const data   = '0x64ed3e49' + amtHex;
+    const amtHex    = amtParsed.toHexString().replace('0x','').padStart(64,'0');
+    const data      = '0x64ed3e49' + amtHex; // bridge(uint256)
+
+    let gasLimit = ethers.BigNumber.from(150000);
+    try {
+      const est = await provider.estimateGas({ to: ARC_AGENT, from: walletAddress, value: amtParsed, data: data });
+      gasLimit = est.mul(130).div(100);
+    } catch(_) {}
+
     showToast('Bridge transaction bheja ja raha hai... ⏳','⏳');
-    const tx = await signer.sendTransaction({ to: ARC_AGENT, value: amtParsed, data: data, gasLimit: ethers.utils.hexlify(100000) });
+    const tx = await signer.sendTransaction({ to: ARC_AGENT, value: amtParsed, data: data, gasLimit: gasLimit });
     showToast('Bridge submitted! ' + tx.hash.slice(0,10) + '... ⛓️','⛓️');
+
     const receipt = await tx.wait();
-    if (!receipt || receipt.status === 0) {
-      showToast('✅ Transaction processed! Block: ' + (receipt?.blockNumber || '—'),'✅');
-    } else {
-      showToast('✅ Bridge confirmed! ' + amount + ' USDC → ' + toChain + ' | Block: ' + receipt.blockNumber,'✅');
-    }
+    showToast('✅ Bridge confirmed! ' + amount + ' USDC → ' + toChain + ' | Block: ' + receipt.blockNumber,'✅');
+
     fetchUSDCBalance(); fetchAllRealData();
     setTimeout(() => window.open('https://testnet.arcscan.app/tx/' + tx.hash, '_blank'), 1000);
+
   } catch(err) {
+    console.error('Bridge error:', err);
+    if (err.code === 4001) { showToast('Bridge cancel ❌','❌'); return; }
     if (err.transaction || err.transactionHash) {
       const h = err.transaction?.hash || err.transactionHash || '';
-      showToast('✅ Transaction submitted! Check ArcScan ↗','✅');
+      showToast('✅ Bridge submitted! Check ArcScan ↗','✅');
       fetchUSDCBalance();
       if (h) setTimeout(() => window.open('https://testnet.arcscan.app/tx/'+h,'_blank'),1000);
-    } else if (err.code === 4001) showToast('Bridge cancel ❌','❌');
-    else showToast('Bridge failed: ' + (err.reason || err.message || 'Unknown') + ' ❌','❌');
+      return;
+    }
+    showToast('Bridge failed: ' + (err.reason || err.message || 'Unknown') + ' ❌','❌');
   }
 }
 
@@ -3006,9 +3039,10 @@ async function fetchProtocolStatsPage() {
   const ARC_AGENT = '0xD628F82B8339e601529F76a9dF70C48E658cA882';
   const myAddr    = walletAddress || null;
   const setEl = (id, val) => { const e=document.getElementById(id); if(e) e.textContent=val; };
+  const BASE  = 'https://testnet.arcscan.app/api/v2';
 
   try {
-    // 1. Block + gas price
+    // 1. Block + gas price via RPC
     const [blockHex, gasPriceHex] = await Promise.all([
       _protoRPC('eth_blockNumber', []),
       _protoRPC('eth_gasPrice', [])
@@ -3019,7 +3053,7 @@ async function fetchProtocolStatsPage() {
       setEl('protoBlock', latestBlock.toLocaleString());
       const [b1, b2] = await Promise.all([
         _protoRPC('eth_getBlockByNumber', ['0x'+latestBlock.toString(16), false]),
-        _protoRPC('eth_getBlockByNumber', ['0x'+(latestBlock-10).toString(16), false])
+        _protoRPC('eth_getBlockByNumber', ['0x'+Math.max(0,latestBlock-10).toString(16), false])
       ]);
       if (b1 && b2) {
         const diff = (parseInt(b1.timestamp,16) - parseInt(b2.timestamp,16)) / 10;
@@ -3029,67 +3063,70 @@ async function fetchProtocolStatsPage() {
     setEl('protoGasPrice', gasGwei==='—' ? '—' : gasGwei+' Gwei');
     setEl('protoChainStatus', '✓ Online');
 
-    // 2. Fetch ALL transactions — wallet address + ARCAgent contract txns
-    const BASE = 'https://testnet.arcscan.app/api';
+    // 2. Fetch ARCAgent contract transactions via Blockscout v2
     const fetches = [
-      // ARCAgent token transfer events (all users)
-      fetch(`${BASE}?module=account&action=tokentx&contractaddress=${ARC_AGENT}&page=1&offset=1000&sort=desc`).then(r=>r.json()).catch(()=>({status:'0'})),
-      // Normal txns to/from ARCAgent contract
-      fetch(`${BASE}?module=account&action=txlist&address=${ARC_AGENT}&page=1&offset=1000&sort=desc`).then(r=>r.json()).catch(()=>({status:'0'})),
+      fetch(`${BASE}/addresses/${ARC_AGENT}/transactions?filter=to%7Cfrom`).then(r=>r.json()).catch(()=>({items:[]})),
+      fetch(`${BASE}/addresses/${ARC_AGENT}/counters`).then(r=>r.json()).catch(()=>({}))
     ];
-    // If wallet connected — also fetch wallet's own txns
     if (myAddr) {
       fetches.push(
-        fetch(`${BASE}?module=account&action=txlist&address=${myAddr}&page=1&offset=1000&sort=desc`).then(r=>r.json()).catch(()=>({status:'0'})),
-        fetch(`${BASE}?module=account&action=tokentx&contractaddress=${ARC_AGENT}&address=${myAddr}&page=1&offset=1000&sort=desc`).then(r=>r.json()).catch(()=>({status:'0'}))
+        fetch(`${BASE}/addresses/${myAddr}/transactions?filter=to%7Cfrom`).then(r=>r.json()).catch(()=>({items:[]}))
       );
     }
 
     const results = await Promise.all(fetches);
-    const tokenTxns  = results[0]?.status==='1' ? (results[0].result||[]) : [];
-    const normalTxns = results[1]?.status==='1' ? (results[1].result||[]) : [];
-    const myNormal   = results[2]?.status==='1' ? (results[2].result||[]) : [];
-    const myToken    = results[3]?.status==='1' ? (results[3].result||[]) : [];
+    const contractTxRaw = results[0]?.items || [];
+    const counters       = results[1] || {};
+    const myTxRaw        = results[2]?.items || [];
 
-    // Merge + deduplicate all txns
+    // Normalize Blockscout v2 tx format
+    const normalize = (items) => items.map(t => ({
+      hash: t.hash,
+      from: (t.from?.hash || '').toLowerCase(),
+      to:   (t.to?.hash || '').toLowerCase(),
+      value: t.value || '0',
+      timeStamp: t.timestamp ? Math.floor(new Date(t.timestamp).getTime()/1000) : 0,
+      input: t.raw_input || '0x',
+      method: t.method || ''
+    }));
+
+    const contractTxns = normalize(contractTxRaw);
+    const myTxns        = normalize(myTxRaw);
+
     const seen = new Set();
-    const allTxns = [...tokenTxns, ...normalTxns, ...myNormal, ...myToken].filter(t => {
+    const allTxns = [...contractTxns, ...myTxns].filter(t => {
       if (!t.hash || seen.has(t.hash)) return false;
       seen.add(t.hash); return true;
     });
 
-    // Unique addresses (exclude contract itself)
+    // Unique addresses
     const uniqueAddrs = new Set();
     allTxns.forEach(t => {
-      if (t.from && t.from.toLowerCase() !== ARC_AGENT.toLowerCase()) uniqueAddrs.add(t.from.toLowerCase());
-      if (t.to   && t.to.toLowerCase()   !== ARC_AGENT.toLowerCase()) uniqueAddrs.add(t.to.toLowerCase());
+      if (t.from && t.from !== ARC_AGENT.toLowerCase()) uniqueAddrs.add(t.from);
+      if (t.to   && t.to   !== ARC_AGENT.toLowerCase()) uniqueAddrs.add(t.to);
     });
     const userCount = Math.max(uniqueAddrs.size, myAddr ? 1 : 0);
-    const totalTxns = allTxns.length;
+    const totalTxns = allTxns.length || parseInt(counters.transactions_count || '0');
 
-    // Classify by input data + value (ARC native = 1e18 decimals)
-    let bridgeVol=0, swapVol=0, sendVol=0;
-    let bridgeCount=0, swapCount=0, sendCount=0;
+    // Classify by function selector
+    let bridgeVol=0, swapVol=0, sendVol=0, depositVol=0;
+    let bridgeCount=0, swapCount=0, sendCount=0, depositCount=0;
     allTxns.forEach(t => {
-      const val    = parseInt(t.value||'0');
-      const valUSD = val / 1e18;  // ARC native USDC = 18 decimals
-      const input  = t.input || t.data || '';
-      const isContract = input.length > 10 && input !== '0x';
-
-      if (isContract && valUSD >= 10) { bridgeVol += val; bridgeCount++; }
-      else if (isContract)             { swapVol   += val; swapCount++;   }
-      else if (valUSD > 0)             { sendVol   += val; sendCount++;   }
+      const val   = parseInt(t.value || '0');
+      const sel   = (t.input || '').slice(0,10);
+      if (sel === '0x64ed3e49')      { bridgeVol  += val; bridgeCount++;  }
+      else if (sel === '0xd004f0f7') { swapVol    += val; swapCount++;   }
+      else if (sel === '0xb6b55f25') { depositVol += val; depositCount++; }
+      else if (val > 0)              { sendVol    += val; sendCount++;   }
     });
-    const otherCount = Math.max(0, totalTxns - bridgeCount - swapCount - sendCount);
-    const totalClassified = bridgeCount + swapCount + sendCount + otherCount || 1;
+    const totalClassified = bridgeCount+swapCount+sendCount+depositCount || 1;
 
     // Active today
     const oneDayAgo = Math.floor(Date.now()/1000) - 86400;
     const todayAddrs = new Set();
-    allTxns.filter(t => parseInt(t.timeStamp||0) > oneDayAgo)
-           .forEach(t => { if(t.from) todayAddrs.add(t.from.toLowerCase()); });
+    allTxns.filter(t => t.timeStamp > oneDayAgo).forEach(t => { if(t.from) todayAddrs.add(t.from); });
 
-    // Total supply of ARCAgent token
+    // Total supply
     const tsHex = await _protoRPC('eth_call', [{to:ARC_AGENT, data:'0x18160ddd'}, 'latest']);
     const totalSupply = tsHex && tsHex !== '0x' ? parseInt(tsHex,16) : null;
 
@@ -3102,15 +3139,15 @@ async function fetchProtocolStatsPage() {
     setEl('protoBridgeChange',    bridgeCount+' bridge transactions');
     setEl('protoSwapVol',         _fmtUSDC(swapVol));
     setEl('protoSwapChange',      swapCount+' swap transactions');
-    setEl('protoSendVol',         _fmtUSDC(sendVol));
-    setEl('protoSendChange',      sendCount+' send transactions');
+    setEl('protoSendVol',         _fmtUSDC(sendVol+depositVol));
+    setEl('protoSendChange',      (sendCount+depositCount)+' send transactions');
     setEl('protoActiveToday',     todayAddrs.size || '—');
     setEl('protoTotalSupply',     totalSupply ? _fmtUSDC(totalSupply) : '—');
     setEl('protoChainStatus',     '✓ Online');
 
     // Breakdown bar
     const pcts = {
-      send:   Math.round(sendCount/totalClassified*100),
+      send:   Math.round((sendCount+depositCount)/totalClassified*100),
       bridge: Math.round(bridgeCount/totalClassified*100),
       swap:   Math.round(swapCount/totalClassified*100),
       other:  0
@@ -3127,20 +3164,17 @@ async function fetchProtocolStatsPage() {
     _pushSpark(_sparkBuf.txns,   totalTxns);
     _pushSpark(_sparkBuf.bridge, bridgeVol/1e18);
     _pushSpark(_sparkBuf.swap,   swapVol/1e18);
-    _pushSpark(_sparkBuf.send,   sendVol/1e18);
+    _pushSpark(_sparkBuf.send,   (sendVol+depositVol)/1e18);
     _drawSpark('sparkUsers',  _sparkBuf.users,  'rgba(167,139,250,0.8)');
     _drawSpark('sparkTxns',   _sparkBuf.txns,   'rgba(16,185,129,0.8)');
     _drawSpark('sparkBridge', _sparkBuf.bridge, 'rgba(6,182,212,0.8)');
     _drawSpark('sparkSwap',   _sparkBuf.swap,   'rgba(245,158,11,0.8)');
     _drawSpark('sparkSend',   _sparkBuf.send,   'rgba(99,102,241,0.8)');
 
-    // Leaderboard — top wallets by tx count
+    // Leaderboard
     const addrTxCount = {};
     allTxns.forEach(t => {
-      if (t.from && t.from.toLowerCase() !== ARC_AGENT.toLowerCase()) {
-        const a = t.from.toLowerCase();
-        addrTxCount[a] = (addrTxCount[a]||0) + 1;
-      }
+      if (t.from && t.from !== ARC_AGENT.toLowerCase()) addrTxCount[t.from] = (addrTxCount[t.from]||0)+1;
     });
     const sorted = Object.entries(addrTxCount).sort((a,b)=>b[1]-a[1]).slice(0,5);
     const rankClass = ['gold','silver','bronze','',''];
@@ -3158,15 +3192,11 @@ async function fetchProtocolStatsPage() {
           ).join('');
     }
 
-    // Timestamp
     const upEl = document.getElementById('protoLastUpdated');
     if (upEl) upEl.textContent = 'Updated '+new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
 
-    // Auto-refresh every 30s while on stats page
     if (_protoStatsTimer) clearTimeout(_protoStatsTimer);
-    if (currentPage === 'stats') {
-      _protoStatsTimer = setTimeout(fetchProtocolStatsPage, 30000);
-    }
+    if (currentPage === 'stats') _protoStatsTimer = setTimeout(fetchProtocolStatsPage, 30000);
 
   } catch(e) {
     console.warn('[ProtoStats] error', e);
@@ -3461,40 +3491,34 @@ async function loadStakingHistory() {
 
   try {
     const ARC_AGENT = '0xD628F82B8339e601529F76a9dF70C48E658cA882';
-    // Fetch txns from ArcScan — filter deposit/withdraw/claim by input data
-    const res = await fetch(
-      `https://testnet.arcscan.app/api?module=account&action=txlist&address=${walletAddress}&page=1&offset=100&sort=desc`
-    );
+    const res = await fetch(`https://testnet.arcscan.app/api/v2/addresses/${walletAddress}/transactions?filter=to%7Cfrom`);
     const data = await res.json();
-    const txns = data?.status === '1' ? (data.result || []) : [];
+    const items = data?.items || [];
 
-    // Filter staking related txns (to ARCAgent contract)
-    const stakingTxns = txns.filter(t =>
-      t.to && t.to.toLowerCase() === ARC_AGENT.toLowerCase()
-    );
+    const stakingTxns = items.filter(t => (t.to?.hash || '').toLowerCase() === ARC_AGENT.toLowerCase());
 
-    // Calculate totals
-    let totalDeposited = 0;
-    let totalWithdrawn = 0;
+    let totalDeposited = 0, totalWithdrawn = 0;
     stakingTxns.forEach(t => {
       const val = parseInt(t.value || '0') / 1e18;
-      const input = t.input || '';
-      if (input.startsWith('0xb6b55f25')) totalDeposited += val; // deposit
-      else if (input.startsWith('0x2e1a7d4d')) totalWithdrawn += val; // withdraw
-      else if (val > 0) totalDeposited += val; // native send = deposit
+      const input = t.raw_input || '';
+      if (input.startsWith('0xb6b55f25')) totalDeposited += val;
+      else if (input.startsWith('0x2e1a7d4d')) totalWithdrawn += val;
+      else if (val > 0) totalDeposited += val;
     });
 
-    // Update staked balance + pending reward
     const netStaked = Math.max(0, totalDeposited - totalWithdrawn);
     window.stakedBalance = netStaked.toFixed(4);
-    window.pendingReward = (netStaked * 0.125 / 365).toFixed(6); // daily reward 12.5% APY
+    window.pendingReward = (netStaked * 0.125 / 365).toFixed(6);
 
     const stEl = document.getElementById('investStaked');
     if (stEl) stEl.textContent = window.stakedBalance + ' USDC';
     const rwEl = document.getElementById('investReward');
     if (rwEl) rwEl.textContent = window.pendingReward + ' USDC';
+    const claimStakedEl = document.getElementById('claimStakedAmt');
+    if (claimStakedEl) claimStakedEl.textContent = window.stakedBalance + ' USDC';
+    const claimRewardEl = document.getElementById('claimRewardDisplay');
+    if (claimRewardEl) claimRewardEl.textContent = window.pendingReward + ' USDC';
 
-    // Render history list
     if (!el) return;
     if (stakingTxns.length === 0) {
       el.innerHTML = '<div style="color:var(--muted2);font-size:12px;padding:16px 0;text-align:center">No staking transactions yet</div>';
@@ -3505,17 +3529,17 @@ async function loadStakingHistory() {
       '0xb6b55f25': { label: 'Deposit',  icon: '🔒', color: 'var(--neon4)' },
       '0x2e1a7d4d': { label: 'Withdraw', icon: '📤', color: 'var(--neon2)' },
       '0x4e71d92d': { label: 'Claim',    icon: '🎁', color: 'var(--neon3)' },
+      '0xd004f0f7': { label: 'Swap',     icon: '🔄', color: 'var(--neon1)' },
+      '0x64ed3e49': { label: 'Bridge',   icon: '⛓️', color: 'var(--neon2)' },
     };
 
-    el.innerHTML = stakingTxns.slice(0, 20).map(t => {
+    el.innerHTML = stakingTxns.slice(0,20).map(t => {
       const val   = (parseInt(t.value || '0') / 1e18).toFixed(4);
-      const input = t.input || '';
-      const sel   = input.slice(0, 10);
-      const info  = typeLabel[sel] || { label: 'Interact', icon: '⚡', color: 'var(--muted2)' };
-      const date  = new Date(parseInt(t.timeStamp) * 1000).toLocaleString('en-IN', {
-        day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'
-      });
-      const hash  = t.hash ? t.hash.slice(0,10) + '...' : '—';
+      const input = t.raw_input || '';
+      const sel   = input.slice(0,10);
+      const info  = typeLabel[sel] || { label: 'Send', icon: '💸', color: 'var(--muted2)' };
+      const date  = t.timestamp ? new Date(t.timestamp).toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '—';
+      const hash  = t.hash ? t.hash.slice(0,10)+'...' : '—';
       const url   = `https://testnet.arcscan.app/tx/${t.hash}`;
       return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
         <div style="font-size:20px">${info.icon}</div>
